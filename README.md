@@ -1,3 +1,9 @@
+Dependencies :
+- Ubuntu 16.04
+- make
+- gcc
+- CUDA 8.0 or greater
+
 Steps to perform perf test
 1. sh build_ubuntu.sh
 2. ./amoveo_gpu_miner
