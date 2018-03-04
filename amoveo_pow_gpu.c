@@ -222,10 +222,10 @@ void perf_CUDA(){
     clock_t t_start;
     clock_t t_cudastart;
     clock_t t_end;
+
+    double numHashesPerRound = ((double)gdim)*((double)gdim)*((double)bdim);
     t_start = clock();
-    do{	
-	double numHashes = ((double)gdim)*((double)gdim)*((double)bdim);
-			
+    do{			
 	t_cudastart = clock();
 	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,m);
 			
@@ -234,9 +234,11 @@ void perf_CUDA(){
 			
 	cuda_elapsed = ((double)(t_end-t_cudastart))/CLOCKS_PER_SEC;
 	elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashes/(1000000.0*cuda_elapsed),elapsed);
+	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashesPerRound/(1000000.0*cuda_elapsed),elapsed);
     }while(!success && elapsed < timeout);
-		    
-    printf("Hash rate test finished\n");
+
+    double averageRate = m*numHashesPerRound/(1000000.0*elapsed);
+    
+    printf("Hash rate test finished - Average %0.2f MH/s\n",averageRate);
 	
 }
