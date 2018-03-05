@@ -1,5 +1,6 @@
 Dependencies :
 - Ubuntu 16.04
+- erlang
 - make
 - gcc
 - CUDA 8.0 or greater
