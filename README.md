@@ -1,10 +1,11 @@
 Dependencies :
 - Ubuntu 16.04
-- erlang
-- make
-- curl
-- gcc
-- CUDA 8.0 or greater
+- [CUDA 8.0 or greater](https://askubuntu.com/a/799185)
+```
+sudo apt-get install erlang libncurses5-dev libssl-dev unixodbc-dev g++ git
+sudo apt-get install build-essential
+sudo apt-get install curl
+```
 
 Steps to mine:
 1. Set Pubkey in miner_gpu.erl
