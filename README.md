@@ -6,7 +6,7 @@ Measured GPU Speeds:
 
 Dependencies :
 - Ubuntu 16.04
-- [CUDA 8.0](https://askubuntu.com/a/799185)
+- [CUDA 8.0 or later](https://askubuntu.com/a/799185)
 ```
 sudo apt-get install erlang libncurses5-dev libssl-dev unixodbc-dev g++ git
 sudo apt-get install build-essential
