@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
 	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s\n",m,HashesPerRound/(1000000.0*round_elapsed));
+	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s took %0.1f s\n",m,HashesPerRound/(1000000.0*round_elapsed),round_elapsed);
 	fflush(fdebug);
 	m++;
 	t_round = clock();
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 	if(get_height() != init_height)
 	    break;
     }while(!success);
-
+    
     if(success){
 	fprintf(fdebug,"Nonce found after %f seconds\n",total_elapsed);
 	write_nonce(nonce);

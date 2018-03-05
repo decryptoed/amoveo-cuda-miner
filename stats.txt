@@ -1,3 +1,3 @@
 - V1
-GTX1080 - 146 MH/s default, 959 MH/s upgraded 
+GTX1080 - 146 MH/s default, 1010 MH/s upgraded 
 GTX1080Ti x2 - 233 MH/s default
