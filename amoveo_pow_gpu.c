@@ -136,86 +136,67 @@ int read_input(BYTE B[32], BYTE N[32], WORD id) {
     fclose(fileptr); // Close the file
     return diff;
 }
-int main(int argc, char *argv[])
-{
-    FILE *fdebug = fopen("debug.txt","w");
 
-    int init_height = get_height();
-    if(init_height == 0)
-	return(0);
 
+int correctness_CUDA(){
+    printf("Starting correctness test for 10 seconds.\n");
+    double timeout = 10.0;
     srand(time(NULL));
-    BYTE bhash[32];
-    BYTE nonce[32];
-    if (argc > 1) {
-	if(strcmp(argv[1],"perftest")==0)
-	{
-	    perf_CUDA();
-	    return(0);
-	}
-    }
-
-    int diff = read_input(bhash, nonce, 0);
-    fprintf(fdebug,"Height : %d, Difficulty : %d\n",init_height, diff);
-    fflush(fdebug);
     
-    BYTE bdata[66];//32+2+32 
-    for (int i = 0; i < 32; i++) 
-	bdata[i] = bhash[i];
-    bdata[32] = diff / 256;
-    bdata[33] = diff % 256;
-    int r;
-    for (int i = 0; i < 30; i++)
-    {
-	r = rand()%255;
-	bdata[i+34] = r;
-	nonce[i] = r;
-    }
-    bdata[64] = 0;
-    bdata[65] = 0;
-    nonce[30] = 0;
-    nonce[31] = 0;
-  
+    BYTE nonce[32];
+    BYTE data[66];
+
+    unsigned int d = 3000; //some low difficulty
+    unsigned int gdim = 1<<8;
     unsigned int bdim = 1<<10;
-    unsigned int gdim = 1<<11;
-  
-    int success = 0;
+
+    double elapsed = 0;
+    int success = 1;
     unsigned int m = 0;
+    
     clock_t t_start;
-    clock_t t_round;
     clock_t t_end;
-    double total_elapsed;
-    double round_elapsed;
 
-    double HashesPerRound = ((double)gdim)*((double)gdim)*((double)bdim);
-  
     t_start = clock();
-    t_round = clock();
     do{
-	success = amoveo_mine_gpu(nonce,diff,bdata,gdim,bdim,m);
-      
+	for(int i = 0; i < 32; i++)
+	{
+	    data[i] = rand()%255;
+	    data[34+i] = 0;
+	}
+	data[32] = d/256;
+	data[33] = d%256;
+	int r;
+	for (int i = 0; i < 30; i++)
+	{
+	    r = rand()%255;
+	    data[i+34] = r;
+	    nonce[i] = r;
+	}
+	data[64] = 0;
+	data[65] = 0;
+	nonce[30] = 0;
+	nonce[31] = 0;
+	
+	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0);
+
+	if(success){
+	    m++;
+	
+	    if(!check_pow(nonce,d,data))
+		return 0;
+	}else{
+	    printf("Your GPU couldn't solve an easy problem!\n");
+	    return 0;
+	}
 	t_end = clock();
-	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
-	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s\n",m,HashesPerRound/(1000000.0*round_elapsed));
-	fflush(fdebug);
-	m++;
-	t_round = clock();
+	
+	elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+	
+    }while(elapsed < timeout);
 
-	if(get_height() != init_height)
-	    break;
-    }while(!success);
-
-    if(success){
-	fprintf(fdebug,"Nonce found after %f seconds\n",total_elapsed);
-	write_nonce(nonce);
-    }else{
-	fprintf(fdebug,"Somebody else found nonce within %f seconds\n",total_elapsed);
-    }
-    fprintf(fdebug,"\n");
-    fflush(fdebug);
-  
-    return(success);
+    printf("Correctness test passed - %d checks\n", m);
+    return 1;
 }
 
 //Tests hash rate
@@ -277,5 +258,91 @@ void perf_CUDA(){
     double averageRate = m*numHashesPerRound/(1000000.0*elapsed);
     
     printf("Hash rate test finished - Average %0.2f MH/s\n",averageRate);
-	
+}
+
+int main(int argc, char *argv[])
+{
+    FILE *fdebug = fopen("debug.txt","w");
+
+    int init_height = get_height();
+    if(init_height == 0)
+	return(0);
+
+    srand(time(NULL));
+    BYTE bhash[32];
+    BYTE nonce[32];
+    if (argc > 1) {
+	if(strcmp(argv[1],"perftest")==0)
+	{
+	    if(!correctness_CUDA())
+	    {
+		printf("Wrong correctness! Something is wrong.\n");
+		return(0);
+	    }	    
+	    perf_CUDA();
+	    return(0);
+	}
+    }
+
+    int diff = read_input(bhash, nonce, 0);
+    fprintf(fdebug,"Height : %d, Difficulty : %d\n",init_height, diff);
+    fflush(fdebug);
+    
+    BYTE bdata[66];//32+2+32 
+    for (int i = 0; i < 32; i++) 
+	bdata[i] = bhash[i];
+    bdata[32] = diff / 256;
+    bdata[33] = diff % 256;
+    int r;
+    for (int i = 0; i < 30; i++)
+    {
+	r = rand()%255;
+	bdata[i+34] = r;
+	nonce[i] = r;
+    }
+    bdata[64] = 0;
+    bdata[65] = 0;
+    nonce[30] = 0;
+    nonce[31] = 0;
+  
+    unsigned int bdim = 1<<10;
+    unsigned int gdim = 1<<11;
+  
+    int success = 0;
+    unsigned int m = 0;
+    clock_t t_start;
+    clock_t t_round;
+    clock_t t_end;
+    double total_elapsed;
+    double round_elapsed;
+
+    double HashesPerRound = ((double)gdim)*((double)gdim)*((double)bdim);
+  
+    t_start = clock();
+    t_round = clock();
+    do{
+	success = amoveo_mine_gpu(nonce,diff,bdata,gdim,bdim,0);
+      
+	t_end = clock();
+	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
+	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s\n",m,HashesPerRound/(1000000.0*round_elapsed));
+	fflush(fdebug);
+	m++;
+	t_round = clock();
+
+	if(get_height() != init_height)
+	    break;
+    }while(!success);
+
+    if(success){
+	fprintf(fdebug,"Nonce found after %f seconds\n",total_elapsed);
+	write_nonce(nonce);
+    }else{
+	fprintf(fdebug,"Somebody else found nonce within %f seconds\n",total_elapsed);
+    }
+    fprintf(fdebug,"\n");
+    fflush(fdebug);
+  
+    return(success);
 }
