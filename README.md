@@ -11,7 +11,7 @@ Steps to mine:
 1. Set Pubkey in miner_gpu.erl
 2. sh build_ubuntu.sh
 3. miner_gpu:start().
-4. To see debug info, open debug.txt
+4. To see debug info, open debug.txt ("tail -f debug.txt" in a separate terminal to stream debug info)
 5. sh clean.sh when finished mining
 
 Steps to perform perf test
