@@ -17,7 +17,7 @@ Steps to mine:
 Steps to perform perf test
 1. sh perftest.sh
 
-By default, the miner will mine to my pool that takes a 1% fee.
+By default, the miner will mine to [a mining pool](https://github.com/zack-bitcoin/amoveo-mining-pool) that takes a 1% fee.
 
 For upgrade inquires (x8 Hashpower), please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram.
 
