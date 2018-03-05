@@ -2,6 +2,7 @@ Measured GPU Speeds:
 - GTX1080 - 146 MH/s default, 1010 MH/s upgraded 
 - GTX1080Ti - 233 MH/s default, 945 MH/s upgraded
 - GTX1050 - 61 MH/s default, 353 MH/s upgraded
+- K80 - 83 MH/s default, 256.11 MH/s upgraded
 
 Dependencies :
 - Ubuntu 16.04
@@ -24,7 +25,7 @@ Steps to perform perf test
 
 By default, the miner will mine to [a mining pool](https://github.com/zack-bitcoin/amoveo-mining-pool) that takes a 1% fee.
 
-For upgrade inquires (x5-x8 Hashpower), please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
+For upgrade inquires, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
 
 Donations to encourage improvements and optimizations:
 
