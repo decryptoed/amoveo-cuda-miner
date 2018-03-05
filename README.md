@@ -2,6 +2,7 @@ Dependencies :
 - Ubuntu 16.04
 - erlang
 - make
+- curl
 - gcc
 - CUDA 8.0 or greater
 
