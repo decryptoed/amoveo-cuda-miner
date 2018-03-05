@@ -1,7 +1,7 @@
 Measured GPU Speeds:
-GTX1080 - 146 MH/s default, 1010 MH/s upgraded 
-GTX1080Ti - 233 MH/s default, 945 MH/s upgraded
-GTX1050 - 61 MH/s default, 353 MH/s upgraded
+- GTX1080 - 146 MH/s default, 1010 MH/s upgraded 
+- GTX1080Ti - 233 MH/s default, 945 MH/s upgraded
+- GTX1050 - 61 MH/s default, 353 MH/s upgraded
 
 Dependencies :
 - Ubuntu 16.04
