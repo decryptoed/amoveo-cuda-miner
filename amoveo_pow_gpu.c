@@ -268,7 +268,6 @@ int main(int argc, char *argv[])
     if(init_height == 0)
 	return(0);
 
-    srand(time(NULL));
     BYTE bhash[32];
     BYTE nonce[32];
     if (argc > 1) {
@@ -293,13 +292,8 @@ int main(int argc, char *argv[])
 	bdata[i] = bhash[i];
     bdata[32] = diff / 256;
     bdata[33] = diff % 256;
-    int r;
     for (int i = 0; i < 30; i++)
-    {
-	r = rand()%255;
-	bdata[i+34] = r;
-	nonce[i] = r;
-    }
+	bdata[i+34] = nonce[i];
     bdata[64] = 0;
     bdata[65] = 0;
     nonce[30] = 0;
