@@ -19,7 +19,7 @@ Steps to perform perf test
 
 By default, the miner will mine to [a mining pool](https://github.com/zack-bitcoin/amoveo-mining-pool) that takes a 1% fee.
 
-For upgrade inquires (x8 Hashpower), please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram.
+For upgrade inquires (x8 Hashpower), please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
 
 Donations to encourage improvements and optimizations:
 
