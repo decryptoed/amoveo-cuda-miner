@@ -209,9 +209,9 @@ void perf_CUDA(){
     unsigned int d = 1000000; //some super-high difficulty
     unsigned int gdim = 1<<10;
     unsigned int bdim = 1<<10;
-    double timeout = 60.0;
+    double trials = 10;
 
-    printf("Starting hash rate test for 60 seconds.\n");
+    printf("Starting hash rate test for 10 trials.\n");
      
     for(int i = 0; i < 32; i++)
     {
@@ -253,7 +253,7 @@ void perf_CUDA(){
 	cuda_elapsed = ((double)(t_end-t_cudastart))/CLOCKS_PER_SEC;
 	elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
 	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashesPerRound/(1000000.0*cuda_elapsed),elapsed);
-    }while(!success && elapsed < timeout);
+    }while(!success && m < trials);
 
     double averageRate = m*numHashesPerRound/(1000000.0*elapsed);
     
