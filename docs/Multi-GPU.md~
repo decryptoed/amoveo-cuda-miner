@@ -1,4 +1,0 @@
-For multiple GPUs, open one terminal for each GPU and in that terminal do "sh build_ubuntu.sh [n]", where n is the GPU number. For example:
-
-Terminal 1 For GPU 1 - "sh build_ubuntu.sh 0"
-Terminal 2 For GPU 2 - "sh build_ubuntu.sh 1"

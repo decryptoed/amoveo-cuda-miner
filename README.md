@@ -27,6 +27,8 @@ By default, the miner will mine to [a mining pool](https://github.com/zack-bitco
 
 The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-5x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
 
+[Instructions for Multi-GPU mining.](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md)
+
 Donations to encourage improvements and optimizations:
 
 Amoveo - BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=
