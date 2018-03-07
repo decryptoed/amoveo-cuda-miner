@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
     t_start = clock();
     t_round = clock();
     do{
-	success = amoveo_mine_gpu(nonce,diff,bdata,gdim,bdim,0);
+	success = amoveo_mine_gpu(nonce,diff,bdata,gdim,bdim,m);
       
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
