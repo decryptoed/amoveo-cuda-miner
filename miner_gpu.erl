@@ -9,6 +9,12 @@
 -define(pool_sleep_period, 1000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
 
+bin_to_hex(<<>>) -> "";
+bin_to_hex(<<A, B/binary>>) ->
+    byte_to_hex(<<A>>) ++ bin_to_hex(B).
+byte_to_hex(<< N1:4, N2:4 >>) ->
+    [erlang:integer_to_list(N1, 16), erlang:integer_to_list(N2, 16)].
+
 unpack_mining_data(R) ->
     <<_:(8*11), R2/binary>> = list_to_binary(R),
     {First, R3} = slice(R2, hd("\"")),
@@ -21,7 +27,7 @@ unpack_mining_data(R) ->
     {F, S, Third}.
 start() ->
     io:fwrite("Started mining, "),
-    io:fwrite("see debug.txt for more info\n"),
+    io:fwrite("see debug"++os:getenv("CUDA_VISIBLE_DEVICES")++".txt for more info.\n"),
     io:fwrite("Your Pubkey is "++binary_to_list(?Pubkey)++"\n"),
     io:fwrite("You are connecting to "++?Peer++"\n"),
     start2().
@@ -59,8 +65,13 @@ start_gpu_miner(R) ->
 	{Port, {exit_status,1}}->
 	    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
 	    StrTime = lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])),
-	    io:fwrite("Found a block on "++StrTime++".\n"),
 	    Nonce = read_nonce(1),
+	    io:fwrite(StrTime++" - Found block "),
+	    io:fwrite(bin_to_hex(<<F/binary>>)),
+	    Diff = list_to_integer(binary_to_list(Third)),
+	    io:fwrite(integer_to_list(Diff,16)),
+	    io:fwrite(bin_to_hex(<<Nonce:256>>)),
+	    io:fwrite(" for difficulty "++integer_to_list(Diff)++".\n"),
             BinNonce = base64:encode(<<Nonce:256>>),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
             talk_helper(Data, ?Peer, 5),

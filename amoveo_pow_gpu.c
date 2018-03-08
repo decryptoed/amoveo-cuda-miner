@@ -265,8 +265,6 @@ void perf_CUDA(){
 
 int main(int argc, char *argv[])
 {
-    FILE *fdebug = fopen("debug.txt","w");
-
     int init_height = get_height();
     if(init_height == 0)
 	return(0);
@@ -290,7 +288,11 @@ int main(int argc, char *argv[])
 	id = 0;
     }
 
+    char debugfilename[16];
+    sprintf(debugfilename,"debug%d.txt",id);
+    FILE *fdebug = fopen(debugfilename,"w");
     int diff = read_input(bhash, nonce, id);
+    
     fprintf(fdebug,"Height : %d, Difficulty : %d\n",init_height, diff);
     fflush(fdebug);
     
@@ -338,6 +340,15 @@ int main(int argc, char *argv[])
     
     if(success){
 	fprintf(fdebug,"Nonce found after %f seconds\n",total_elapsed);
+	fprintf(fdebug,"Block : ");
+	for(int i = 0; i < 34; i++)
+	    fprintf(fdebug,"%02X",bdata[i]);
+	fprintf(fdebug,"\n");
+	fprintf(fdebug,"Nonce : ");
+	for(int i = 0; i < 32; i++)
+	    fprintf(fdebug,"%02X",nonce[i]);
+	fprintf(fdebug,"\n");
+	
 	write_nonce(nonce);
     }else{
 	fprintf(fdebug,"Somebody else found nonce within %f seconds\n",total_elapsed);
