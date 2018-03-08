@@ -20,8 +20,10 @@ unpack_mining_data(R) ->
     S = base64:decode(Second),
     {F, S, Third}.
 start() ->
-    io:fwrite("Started mining.\n"),
-    io:fwrite("See debug.txt for more info\n"),
+    io:fwrite("Started mining, "),
+    io:fwrite("see debug.txt for more info\n"),
+    io:fwrite("Your Pubkey is "++binary_to_list(?Pubkey)++"\n"),
+    io:fwrite("You are connecting to "++?Peer++"\n"),
     start2().
 start2() ->
     flush(),
@@ -55,7 +57,9 @@ start_gpu_miner(R) ->
     Port = open_port({spawn, "./amoveo_gpu_miner "++Value},[exit_status]),
     receive 
 	{Port, {exit_status,1}}->
-	    io:fwrite("Found a block!\n"),
+	    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
+	    StrTime = lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])),
+	    io:fwrite("Found a block on "++StrTime++".\n"),
 	    Nonce = read_nonce(1),
             BinNonce = base64:encode(<<Nonce:256>>),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
