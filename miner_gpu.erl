@@ -4,17 +4,10 @@
 %-define(Peer, "http://localhost:8081/").%for a full node on same computer.
 %-define(Peer, "http://localhost:8085/").%for a mining pool on the same computer.
 -define(Peer, "http://24.5.185.238:8085/").%for a mining pool on an external server
--define(CORES, 1).
 -define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
 -define(pool_sleep_period, 1000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
-
-bin_to_hex(<<>>) -> "";
-bin_to_hex(<<A, B/binary>>) ->
-    byte_to_hex(<<A>>) ++ bin_to_hex(B).
-byte_to_hex(<< N1:4, N2:4 >>) ->
-[erlang:integer_to_list(N1, 16), erlang:integer_to_list(N2, 16)].
 
 unpack_mining_data(R) ->
     <<_:(8*11), R2/binary>> = list_to_binary(R),
@@ -28,6 +21,7 @@ unpack_mining_data(R) ->
     {F, S, Third}.
 start() ->
     io:fwrite("Started mining.\n"),
+    io:fwrite("See debug.txt for more info\n"),
     start2().
 start2() ->
     flush(),
@@ -61,17 +55,13 @@ start_gpu_miner(R) ->
     Port = open_port({spawn, "./amoveo_gpu_miner "++Value},[exit_status]),
     receive 
 	{Port, {exit_status,1}}->
-	    io:fwrite("Found a block. 1\n"),
+	    io:fwrite("Found a block!\n"),
 	    Nonce = read_nonce(1),
             BinNonce = base64:encode(<<Nonce:256>>),
-	    io:fwrite(bin_to_hex(<<Nonce:256>>)),
-	    io:fwrite("\n"),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
             talk_helper(Data, ?Peer, 5),
-            io:fwrite("Found a block. 2\n"),
             timer:sleep(100);
 	{Port, {exit_status,0}}->
-	    io:fwrite("did not find a block in that period \n"),
             ok		
     end,
     start2().
