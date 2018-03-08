@@ -110,7 +110,10 @@ int get_height(){
 }
 int read_input(BYTE B[32], BYTE N[32], WORD id) {
     FILE *fileptr;
-    fileptr = fopen("mining_input", "rb");
+    char inputfilename[16];
+    sprintf(inputfilename,"mining_input%d",id);
+    printf(inputfilename);
+    fileptr = fopen(inputfilename, "rb");
     fseek(fileptr, 0, SEEK_END);  // Jump to the end of the file
     int filelen = ftell(fileptr); // Get the current byte offset in the file
     //ftell returns a long, maybe we shouldn't truncate it.
@@ -270,6 +273,7 @@ int main(int argc, char *argv[])
 
     BYTE bhash[32];
     BYTE nonce[32];
+    WORD id;
     if (argc > 1) {
 	if(strcmp(argv[1],"perftest")==0)
 	{
@@ -281,9 +285,12 @@ int main(int argc, char *argv[])
 	    perf_CUDA();
 	    return(0);
 	}
+	id = atoi(argv[1]);
+    }else{
+	id = 0;
     }
 
-    int diff = read_input(bhash, nonce, 0);
+    int diff = read_input(bhash, nonce, id);
     fprintf(fdebug,"Height : %d, Difficulty : %d\n",init_height, diff);
     fflush(fdebug);
     

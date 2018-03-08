@@ -10,6 +10,12 @@
 -define(pool_sleep_period, 1000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
 
+bin_to_hex(<<>>) -> "";
+bin_to_hex(<<A, B/binary>>) ->
+    byte_to_hex(<<A>>) ++ bin_to_hex(B).
+byte_to_hex(<< N1:4, N2:4 >>) ->
+[erlang:integer_to_list(N1, 16), erlang:integer_to_list(N2, 16)].
+
 unpack_mining_data(R) ->
     <<_:(8*11), R2/binary>> = list_to_binary(R),
     {First, R3} = slice(R2, hd("\"")),
@@ -50,13 +56,16 @@ start_gpu_miner(R) ->
     {F, _, Third} = unpack_mining_data(R), %S is the nonce
     RS = crypto:strong_rand_bytes(32),
     ok = file:write_file("nonce.txt", <<"">>),
-    file:write_file("mining_input", <<F/binary, RS/binary, Third/binary>>),
-    Port = open_port({spawn, "./amoveo_gpu_miner"},[exit_status]),
+    Value = os:getenv("CUDA_VISIBLE_DEVICES"),
+    file:write_file("mining_input"++Value, <<F/binary, RS/binary, Third/binary>>),
+    Port = open_port({spawn, "./amoveo_gpu_miner "++Value},[exit_status]),
     receive 
 	{Port, {exit_status,1}}->
 	    io:fwrite("Found a block. 1\n"),
 	    Nonce = read_nonce(1),
             BinNonce = base64:encode(<<Nonce:256>>),
+	    io:fwrite(bin_to_hex(<<Nonce:256>>)),
+	    io:fwrite("\n"),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
             talk_helper(Data, ?Peer, 5),
             io:fwrite("Found a block. 2\n"),
