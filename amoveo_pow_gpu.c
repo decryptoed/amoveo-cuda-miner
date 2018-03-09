@@ -51,7 +51,9 @@ WORD hash2integer(BYTE h[32]) {
 static WORD pair2sci(WORD l[2]) {
     return((256*l[0]) + l[1]);
 }
-int check_pow(BYTE nonce[32], int difficulty, BYTE data[32]) {
+
+int get_pow(BYTE nonce[32], int difficulty, BYTE data[32])
+{
     BYTE text[66];//32+2+32
     for (int i = 0; i < 32; i++) 
 	text[i] = data[i];
@@ -66,11 +68,16 @@ int check_pow(BYTE nonce[32], int difficulty, BYTE data[32]) {
     BYTE buf[32];
     sha256_final(&ctx, buf);
 
-    int i = hash2integer(buf);
-    return(i > difficulty);
+    return hash2integer(buf);
 }
-void write_nonce(BYTE x[32]) {
-    FILE *f = fopen("nonce.txt", "w");
+
+int check_pow(BYTE nonce[32], int difficulty, BYTE data[32]) {
+    return(get_pow(nonce,difficulty,data) > difficulty);
+}
+void write_nonce(BYTE x[32], int id) {
+    char noncefilename[32];
+    sprintf(noncefilename,"./mining_data/nonce%d",id);
+    FILE *f = fopen(noncefilename, "w");
     if (f == NULL) {
 	printf("Error opening file!\n");
 	//exit(1);
@@ -108,11 +115,10 @@ int get_height(){
     buf[end]=0;
     return atoi(buf+start+1);
 }
-int read_input(BYTE B[32], BYTE N[32], WORD id) {
+void read_input(BYTE B[32], BYTE N[32], WORD id, unsigned int* blockdiff, unsigned int* workdiff) {
     FILE *fileptr;
-    char inputfilename[16];
-    sprintf(inputfilename,"mining_input%d",id);
-    printf(inputfilename);
+    char inputfilename[32];
+    sprintf(inputfilename,"./mining_data/mining_input%d",id);
     fileptr = fopen(inputfilename, "rb");
     fseek(fileptr, 0, SEEK_END);  // Jump to the end of the file
     int filelen = ftell(fileptr); // Get the current byte offset in the file
@@ -124,20 +130,34 @@ int read_input(BYTE B[32], BYTE N[32], WORD id) {
     N[29] = (id / 256) % 256;
     N[30] = ((id / 256) / 256) % 256;
     N[31] = (((id / 256) / 256) / 256) % 256;
-    BYTE buffer[10] = { 0 };
+    //ASSUME that blockdiff+separator+workdiff will not be > 16 digits
+    BYTE buffer[16] = { 0 }; 
     fread(buffer, filelen-64, 1, fileptr);
-    int diff = 0;
+    unsigned int bdiff = 0;
     BYTE c = 1;
-    for (int i = 0; i < 10; i++) {
+    int i = 0;
+    for (; i < 16; i++) {
+	c = buffer[i];
+	if (c == 0 || c == '|') {
+	    i++;
+	    break;
+	}
+	bdiff *= 10;
+	bdiff += (c - '0');
+    }
+    unsigned int wdiff = 0; c = 1;
+    for(;i<16;i++)
+    {
 	c = buffer[i];
 	if (c == 0) {
 	    break;
 	}
-	diff *= 10;
-	diff += (c - '0');
+	wdiff *= 10;
+	wdiff += (c - '0');
     }
     fclose(fileptr); // Close the file
-    return diff;
+    *blockdiff = bdiff;
+    *workdiff = wdiff;
 }
 
 
@@ -291,16 +311,18 @@ int main(int argc, char *argv[])
     char debugfilename[16];
     sprintf(debugfilename,"debug%d.txt",id);
     FILE *fdebug = fopen(debugfilename,"w");
-    int diff = read_input(bhash, nonce, id);
-    
-    fprintf(fdebug,"Height : %d, Difficulty : %d\n",init_height, diff);
+    unsigned int blockdiff;
+    unsigned int workdiff;
+    read_input(bhash, nonce, id, &blockdiff, &workdiff);
+
+    fprintf(fdebug,"Height : %d, Block Difficulty : %d, Work Difficulty : %d\n",init_height, blockdiff, workdiff);
     fflush(fdebug);
     
     BYTE bdata[66];//32+2+32 
     for (int i = 0; i < 32; i++) 
 	bdata[i] = bhash[i];
-    bdata[32] = diff / 256;
-    bdata[33] = diff % 256;
+    bdata[32] = blockdiff / 256;
+    bdata[33] = blockdiff % 256;
     for (int i = 0; i < 30; i++)
 	bdata[i+34] = nonce[i];
     bdata[64] = 0;
@@ -324,7 +346,7 @@ int main(int argc, char *argv[])
     t_start = clock();
     t_round = clock();
     do{
-	success = amoveo_mine_gpu(nonce,diff,bdata,gdim,bdim,m);
+	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m);
       
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
@@ -339,7 +361,7 @@ int main(int argc, char *argv[])
     }while(!success);
     
     if(success){
-	fprintf(fdebug,"Nonce found after %f seconds\n",total_elapsed);
+	fprintf(fdebug,"Nonce found after %f seconds - Difficulty %d\n",total_elapsed,get_pow(nonce,blockdiff,bhash));
 	fprintf(fdebug,"Block : ");
 	for(int i = 0; i < 34; i++)
 	    fprintf(fdebug,"%02X",bdata[i]);
@@ -349,7 +371,7 @@ int main(int argc, char *argv[])
 	    fprintf(fdebug,"%02X",nonce[i]);
 	fprintf(fdebug,"\n");
 	
-	write_nonce(nonce);
+	write_nonce(nonce,id);
     }else{
 	fprintf(fdebug,"Somebody else found nonce within %f seconds\n",total_elapsed);
     }
