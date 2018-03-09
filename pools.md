@@ -1,0 +1,4 @@
+- [Mandel's pool](http://amoveopool.com/) - http://amoveopool.com/work
+- Zack's pool 1 - http://159.89.106.253:8085
+- Zack's pool 2 - http://159.65.120.84:8085
+- Gonzalo's pool - http://51.15.75.100:8085

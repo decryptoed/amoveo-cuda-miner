@@ -17,7 +17,8 @@ sudo apt-get install curl
 
 Steps to mine:
 1. [Only needed for the first time] Set Pubkey in miner_gpu.erl
-2. sh build_ubuntu.sh
+2. Set [mining pool address](https://github.com/decryptoed/pools.md) in miner_gpu.erl if necessary.
+3. sh build_ubuntu.sh
 3. miner_gpu:start().
 4. To see debug info, open debug.txt ("tail -f debug.txt" in a separate terminal to stream debug info)
 5. sh clean.sh when finished mining
@@ -25,7 +26,7 @@ Steps to mine:
 Steps to perform perf test
 1. sh perftest.sh
 
-By default, the miner will mine to [a mining pool](https://github.com/zack-bitcoin/amoveo-mining-pool) that takes a 1% fee.
+By default, the miner will mine to [Mandel Hoff's mining pool](http://amoveopool.com/) that takes a 3% fee with shared payouts.
 
 The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade is available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-8x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
 
