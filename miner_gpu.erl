@@ -114,9 +114,9 @@ talk_helper(Data, Peer, N) ->
         {ok, {_, _, R}} -> R;
         %{error, _} ->
         E -> 
-            io:fwrite("\nIf you are running a solo-mining node, then this error may have happened because you need to turn on and sync your Amoveo node before you can mine. You can get it here: https://github.com/zack-bitcoin/amoveo \n If this error happens while connected to the public mining node, then it can probably be safely ignored."),
-             timer:sleep(?pool_sleep_period),
-             talk_helper(Data, Peer, N-1)
+            io:fwrite("No Server Reply.\n"),
+	    timer:sleep(?pool_sleep_period),
+	    talk_helper(Data, Peer, N-1)
     end.
 slice(Bin, Char) ->
     slice(Bin, Char, 0).
