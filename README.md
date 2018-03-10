@@ -17,8 +17,8 @@ sudo apt-get install curl
 
 Setup [Only needed for the first time]:
 1. Set Pubkey in miner_gpu.erl
-2. Set [mining pool address](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/pools.md) in miner_gpu.erl if necessary.
-3. Tune the parameters of your GPU.
+2. Set [mining pool address](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/pools.md) in miner_gpu.erl if necessary.
+3. [Tune the parameters of your GPU](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/tuning.md).
 
 Steps to mine:
 1. sh build_ubuntu.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md))
