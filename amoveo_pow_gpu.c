@@ -95,7 +95,7 @@ void write_nonce(BYTE x[32], int id) {
 int get_height(){
     char buf[256];
     FILE* fp;
-    fp = popen("curl -s -i -d \'[\"height\"]\' http://24.5.185.238:8080","r");
+    fp = popen("curl -s -i -d \'[\"height\"]\' http://159.65.120.84:8080","r");
     if(fp == NULL)
     {
 	printf("Couldn't get height from node\n");
