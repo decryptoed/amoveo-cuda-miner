@@ -104,7 +104,7 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 
 talk_helper2(Data, Peer) ->
     httpc:request(post, {Peer, [], "application/octet-stream", iolist_to_binary(Data)}, [{timeout, 3000}], []).
-talk_helper(_Data, _Peer, 0) -> throw("talk helper failed");
+talk_helper(_Data, _Peer, 0) -> talk_helper(_Data,_Peer,1);
 talk_helper(Data, Peer, N) ->
     case talk_helper2(Data, Peer) of
         {ok, {_Status, _Headers, []}} ->
