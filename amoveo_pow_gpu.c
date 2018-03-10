@@ -5,7 +5,12 @@
 #include "sha256.h"
 #include "utils.h"
 
-int amoveo_mine_gpu(BYTE nonce[32], unsigned int difficulty, BYTE data[32], unsigned int,unsigned int,unsigned int);
+//GPU Tuning Parameters
+#define NonceRounds 100  //Must not be more than 65536
+#define BlockDim 1024    //Must not be more than 1024
+#define GridDim 1<<10     //Must not be more than 65536
+
+int amoveo_mine_gpu(BYTE nonce[32], unsigned int difficulty, BYTE data[32], unsigned int,unsigned int,unsigned int,unsigned int,double*);
 
 WORD hash2integer(BYTE h[32]);
 static WORD pair2sci(WORD l[2]);
@@ -172,14 +177,15 @@ int correctness_CUDA(){
     unsigned int d = 3000; //some low difficulty
     unsigned int gdim = 1<<8;
     unsigned int bdim = 1<<10;
-
+    double numHashes;
+    
     double elapsed = 0;
     int success = 1;
     unsigned int m = 0;
     
     clock_t t_start;
     clock_t t_end;
-
+    
     t_start = clock();
     do{
 	for(int i = 0; i < 32; i++)
@@ -200,8 +206,9 @@ int correctness_CUDA(){
 	data[65] = 0;
 	nonce[30] = 0;
 	nonce[31] = 0;
-	
-	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0);
+
+	//Kernel should be able to find solution within 1 round
+	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0,1,&numHashes);
 
 	if(success){
 	    m++;
@@ -222,6 +229,84 @@ int correctness_CUDA(){
     return 1;
 }
 
+void tune_nonce(int trials_per_run){
+    FILE* f = fopen("noncetune.txt","w");
+    
+    srand(time(NULL));
+    
+    unsigned int d = 1000000; //some super-high difficulty
+
+    BYTE nonce[32];
+    BYTE data[66];
+
+    clock_t t_start;
+    clock_t t_end;
+    double elapsed;
+
+    unsigned int best_n = 0;
+    unsigned int best_bdim = 0;
+    unsigned int best_gdim = 0;
+    double best_elapsed = 0;
+    double best_HashSpeed = 0;
+    
+    printf("Starting search for optimal parameters at %d trials per run.\n",trials_per_run);
+    clock_t tune_start = clock();
+    for(unsigned int gdim = 1; gdim <= 65536; gdim*=2)
+    {
+	for(unsigned int n = 1; n <= 65536; n*=2)
+	{
+	    for(unsigned int bdim = 1; bdim <= 1024; bdim*=2)
+	    {
+		double total_HashSpeed = 0;
+	
+		double numHashes;
+		for(int t = 0; t < trials_per_run; t++)
+		{
+		    for(int i = 0; i < 32; i++)
+		    {
+			data[i] = rand()%255;
+			data[34+i] = 0;
+		    }
+		    data[32] = d/256;
+		    data[33] = d%256;
+		    int r;
+		    for (int i = 0; i < 30; i++)
+		    {
+			r = rand()%255;
+			data[i+34] = r;
+			nonce[i] = r;
+		    }
+		    t_start = clock();
+		    int success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,t,n,&numHashes);
+		    t_end = clock();
+		    if(success)
+			printf("Difficulty is too low! Hashrate estimate will be incorrect\n");
+	    
+		    elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+		    total_HashSpeed += numHashes/(1000000.0*elapsed);
+		}
+		double average_HashSpeed = total_HashSpeed/trials_per_run;
+		printf("NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+		fprintf(f,"NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s\n, HashPower : %5.0f (%5.0f) MH/s",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+		fflush(f);
+		if(average_HashSpeed > best_HashSpeed)
+		{
+		    best_HashSpeed = average_HashSpeed;
+		    best_n = n;
+		    best_bdim = bdim;
+		    best_gdim = gdim;
+		    best_elapsed = elapsed;
+		}
+	    }
+	}
+    }
+    clock_t tune_end = clock();
+    double tune_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+    printf("Tuning took %0.0f seconds at %d trials per run\n",tune_elapsed,trials_per_run);
+    printf("Best NonceRounds : %d, Best BlockDim : %d, Best GridDim : %d, Elapsed %0.1f seconds - %0.0f MH/s\n",best_n,best_bdim,best_gdim,best_elapsed,best_HashSpeed);
+    fclose(f);
+}
+
 //Tests hash rate
 void perf_CUDA(){
     srand(time(NULL));
@@ -230,8 +315,8 @@ void perf_CUDA(){
     BYTE data[66];
 
     unsigned int d = 1000000; //some super-high difficulty
-    unsigned int gdim = 1<<10;
-    unsigned int bdim = 1<<10;
+    unsigned int gdim = GridDim;
+    unsigned int bdim = BlockDim;
     double trials = 10;
 
     printf("Starting hash rate test for 10 trials.\n");
@@ -250,11 +335,7 @@ void perf_CUDA(){
 	data[i+34] = r;
 	nonce[i] = r;
     }
-    data[64] = 0;
-    data[65] = 0;
-    nonce[30] = 0;
-    nonce[31] = 0;
-		    
+    
     unsigned int m = 0;
     double cuda_elapsed = 0;
     double elapsed = 0;
@@ -264,21 +345,21 @@ void perf_CUDA(){
     clock_t t_cudastart;
     clock_t t_end;
 
-    double numHashesPerRound = ((double)gdim)*((double)gdim)*((double)bdim);
+    double numHashes;
     t_start = clock();
     do{			
 	t_cudastart = clock();
-	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,m);
+	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,m,NonceRounds,&numHashes);
 			
 	m++;
 	t_end = clock();
 			
 	cuda_elapsed = ((double)(t_end-t_cudastart))/CLOCKS_PER_SEC;
 	elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashesPerRound/(1000000.0*cuda_elapsed),elapsed);
+	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashes/(1000000.0*cuda_elapsed),elapsed);
     }while(!success && m < trials);
 
-    double averageRate = m*numHashesPerRound/(1000000.0*elapsed);
+    double averageRate = m*numHashes/(1000000.0*elapsed);
     
     printf("Hash rate test finished - Average %0.2f MH/s\n",averageRate);
 }
@@ -301,6 +382,11 @@ int main(int argc, char *argv[])
 		return(0);
 	    }	    
 	    perf_CUDA();
+	    return(0);
+	}else if(strcmp(argv[1],"tune")==0)
+	{
+	    int trials_per_run = (argc == 3) ? atoi(argv[2]) : 1;
+	    tune_nonce(trials_per_run);
 	    return(0);
 	}
 	id = atoi(argv[1]);
@@ -325,13 +411,9 @@ int main(int argc, char *argv[])
     bdata[33] = blockdiff % 256;
     for (int i = 0; i < 30; i++)
 	bdata[i+34] = nonce[i];
-    bdata[64] = 0;
-    bdata[65] = 0;
-    nonce[30] = 0;
-    nonce[31] = 0;
-  
-    unsigned int bdim = 1<<10;
-    unsigned int gdim = 1<<11;
+    
+    unsigned int bdim = BlockDim;
+    unsigned int gdim = GridDim;
   
     int success = 0;
     unsigned int m = 0;
@@ -341,17 +423,17 @@ int main(int argc, char *argv[])
     double total_elapsed;
     double round_elapsed;
 
-    double HashesPerRound = ((double)gdim)*((double)gdim)*((double)bdim);
+    double numHashes;
   
     t_start = clock();
     t_round = clock();
     do{
-	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m);
+	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m,NonceRounds,&numHashes);
       
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
 	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s took %0.1f s\n",m,HashesPerRound/(1000000.0*round_elapsed),round_elapsed);
+	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s took %0.1f s, %0.1f s total.\n",m,numHashes/(1000000.0*round_elapsed),round_elapsed,total_elapsed);
 	fflush(fdebug);
 	m++;
 	t_round = clock();
