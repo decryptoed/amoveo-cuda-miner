@@ -31,7 +31,7 @@ Steps to perform perf test
 
 By default, the miner will mine to [Mandel Hoff's mining pool](http://amoveopool.com/) that takes a 3% fee with shared payouts.
 
-The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade is available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-8x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram. [Performance stats here](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/stats.txt).
+The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade is available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-8x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram.
 
 Donations to encourage improvements and optimizations:
 
