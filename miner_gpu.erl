@@ -1,8 +1,8 @@
--module(miner_gpu)
-.
+-module(miner_gpu).
+
 -export([start/0, unpack_mining_data/1]).
 %-define(Peer, "http://localhost:8081/").%for a full node on same computer.
-%-define(Peer, "http://localhost:8085/").%for a mining pool on the same computer.
+%-define(Peer, "http://159.65.120.84:8085/").%for a mining pool on the same computer.
 -define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
 -define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
@@ -108,10 +108,19 @@ talk_helper(_Data, _Peer, 0) -> talk_helper(_Data,_Peer,1);
 talk_helper(Data, Peer, N) ->
     case talk_helper2(Data, Peer) of
         {ok, {_Status, _Headers, []}} ->
-            io:fwrite("server gave confusing response\n"),
+            io:fwrite("Server gave empty response\n"),
             timer:sleep(?pool_sleep_period),
             talk_helper(Data, Peer, N-1);
-        {ok, {_, _, R}} -> R;
+        {ok, {_, _, R}} ->
+	    StrLen = string:len(R),
+	    FirstChar = string:sub_string(R,1,1),
+	    LastChar = string:sub_string(R,StrLen,StrLen),
+	    case string:equal(FirstChar,"[") andalso string:equal(LastChar,"]") of
+		true -> R;
+		false ->
+		    io:fwrite("Server gave incorrect response\n"),
+		    talk_helper(Data,Peer,N-1)
+	    end;
         %{error, _} ->
         E -> 
             io:fwrite("No Server Reply.\n"),
