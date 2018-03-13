@@ -6,7 +6,7 @@
 -define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
 -define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
--define(pool_sleep_period, 1000).%How long to wait in miliseconds if we cannot connect to the mining pool.
+-define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
 
 unpack_mining_data(R) ->
@@ -51,6 +51,7 @@ start() ->
 
 miner() ->
     {Data,Server} = connectionInfo(),
+    io:fwrite("Ask server for work. "),
     R = talk_helper(Data,Server,1000),
     if
 	is_list(R) ->
@@ -89,13 +90,10 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 	    Nonce = read_nonce(1),
 	    io:fwrite(StrTime++" - Found block "),
 	    io:fwrite(base64:encode(<<BlockHash/binary,BlockDiffInt:16,Nonce:256>>)),
-	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++"."),
+	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
             BinNonce = base64:encode(<<Nonce:256>>),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
             Response = talk_helper(Data, ?Peer, 5),
-	    io:fwrite(" Server reply:"),
-	    io:fwrite(Response),
-	    io:fwrite("\n"),
             timer:sleep(100);
 	{Port, {exit_status,0}}->
             ok		
@@ -112,6 +110,9 @@ talk_helper(Data, Peer, N) ->
             timer:sleep(?pool_sleep_period),
             talk_helper(Data, Peer, N-1);
         {ok, {_, _, R}} ->
+	    io:fwrite("Server reply: "),
+	    io:fwrite(Response),
+	    io:fwrite("\n"),
 	    StrLen = string:len(R),
 	    FirstChar = string:sub_string(R,1,1),
 	    LastChar = string:sub_string(R,StrLen,StrLen),
@@ -119,6 +120,7 @@ talk_helper(Data, Peer, N) ->
 		true -> R;
 		false ->
 		    io:fwrite("Server gave incorrect response\n"),
+		    timer:sleep(?pool_sleep_period),
 		    talk_helper(Data,Peer,N-1)
 	    end;
         %{error, _} ->
