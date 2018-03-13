@@ -93,7 +93,7 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
             BinNonce = base64:encode(<<Nonce:256>>),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
-            Response = talk_helper(Data, ?Peer, 5),
+            talk_helper(Data, ?Peer, 5),
             timer:sleep(100);
 	{Port, {exit_status,0}}->
             ok		
