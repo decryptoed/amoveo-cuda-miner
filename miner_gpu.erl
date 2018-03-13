@@ -49,9 +49,14 @@ start() ->
     io:fwrite("You are connecting to "++?Peer++"\n"),
     miner().
 
+getTime()->
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
+    lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])).
+    
+
 miner() ->
     {Data,Server} = connectionInfo(),
-    io:fwrite("Ask server for work. "),
+    io:fwrite(getTime()++" - Ask server for work. "),
     R = talk_helper(Data,Server,1000),
     if
 	is_list(R) ->
@@ -85,10 +90,8 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
     Port = open_port({spawn, "./amoveo_gpu_miner "++GPUID},[exit_status]),
     receive 
 	{Port, {exit_status,1}}->
-	    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
-	    StrTime = lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])),
 	    Nonce = read_nonce(1),
-	    io:fwrite(StrTime++" - Found block "),
+	    io:fwrite(getTime()++" - Found block "),
 	    io:fwrite(base64:encode(<<BlockHash/binary,BlockDiffInt:16,Nonce:256>>)),
 	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
             BinNonce = base64:encode(<<Nonce:256>>),
