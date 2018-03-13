@@ -111,7 +111,7 @@ talk_helper(Data, Peer, N) ->
             talk_helper(Data, Peer, N-1);
         {ok, {_, _, R}} ->
 	    io:fwrite("Server reply: "),
-	    io:fwrite(Response),
+	    io:fwrite(R),
 	    io:fwrite("\n"),
 	    StrLen = string:len(R),
 	    FirstChar = string:sub_string(R,1,1),
