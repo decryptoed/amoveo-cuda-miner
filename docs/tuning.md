@@ -1,5 +1,4 @@
-There are 3 parameters #define-d in amoveo_pow_gpu.c that should be tuned to your GPU to achieve good mining performance:
-- NonceRounds
+There are 2 parameters #define-d in gpuparams.h that should be tuned to your GPU to achieve good mining performance:
 - BlockDim
 - GridDim
 
