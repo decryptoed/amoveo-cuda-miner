@@ -21,10 +21,9 @@ Setup [Only needed for the first time]:
 3. [Tune the parameters of your GPU](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/tuning.md).
 
 Steps to mine:
-1. sh build_ubuntu.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md))
-2. miner_gpu:start().
-3. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
-4. sh clean.sh when finished mining
+1. sh start_miner.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md))
+2. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
+3. sh clean.sh when finished mining
 
 Steps to perform perf test
 1. sh perftest.sh

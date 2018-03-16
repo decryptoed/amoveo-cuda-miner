@@ -2,8 +2,8 @@
 
 -export([start/0, unpack_mining_data/1]).
 %-define(Peer, "http://localhost:8081/").%for a full node on same computer.
-%-define(Peer, "http://159.65.120.84:8085/").%for a mining pool on the same computer.
--define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
+-define(Peer, "http://159.89.106.253:8085/").%for a mining pool on the same computer.
+%-define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
 -define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
@@ -70,7 +70,7 @@ miner() ->
 read_nonce(0) -> 0;
 read_nonce(N) ->
     case file:read_file("./mining_data/"++"nonce"++os:getenv("CUDA_VISIBLE_DEVICES")) of
-	{ok, <<Nonce:256>>} -> Nonce;
+	{ok, <<Nonce:184>>} -> Nonce;
 	{ok, <<>>} -> 
 	    io:fwrite("nonce failed "),
 	    io:fwrite(integer_to_list(N)),
@@ -80,7 +80,7 @@ read_nonce(N) ->
     end.
 
 start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
-    NonceRand = crypto:strong_rand_bytes(32),
+    NonceRand = crypto:strong_rand_bytes(23),
     GPUID = os:getenv("CUDA_VISIBLE_DEVICES"),
     ok = file:write_file("./mining_data/"++"nonce"++GPUID, <<"">>),
     DiffsDelimiter = <<"|">>,
@@ -92,9 +92,9 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 	{Port, {exit_status,1}}->
 	    Nonce = read_nonce(1),
 	    io:fwrite(getTime()++" - Found block "),
-	    io:fwrite(base64:encode(<<BlockHash/binary,BlockDiffInt:16,Nonce:256>>)),
+	    io:fwrite(base64:encode(<<BlockHash/binary,Nonce:184>>)),
 	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
-            BinNonce = base64:encode(<<Nonce:256>>),
+            BinNonce = base64:encode(<<Nonce:184>>),
             Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
             talk_helper(Data, ?Peer, 5),
             timer:sleep(100);
@@ -105,7 +105,7 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 
 talk_helper2(Data, Peer) ->
     httpc:request(post, {Peer, [], "application/octet-stream", iolist_to_binary(Data)}, [{timeout, 3000}], []).
-talk_helper(_Data, _Peer, 0) -> talk_helper(_Data,_Peer,1);
+talk_helper(_Data, _Peer, 0) -> ok;
 talk_helper(Data, Peer, N) ->
     case talk_helper2(Data, Peer) of
         {ok, {_Status, _Headers, []}} ->
@@ -124,7 +124,7 @@ talk_helper(Data, Peer, N) ->
 		false ->
 		    io:fwrite("Server gave incorrect response\n"),
 		    timer:sleep(?pool_sleep_period),
-		    talk_helper(Data,Peer,N-1)
+	 	    talk_helper(Data,Peer,N-1)
 	    end;
         %{error, _} ->
         E -> 

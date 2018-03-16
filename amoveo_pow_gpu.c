@@ -1,85 +1,83 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
 #include <string.h>
 #include <time.h>
 #include "sha256.h"
 #include "utils.h"
+#include "gpuparams.h"
 
-//GPU Tuning Parameters
-#define NonceRounds 100  //Must not be more than 65536
-#define BlockDim 1024    //Must not be more than 1024
-#define GridDim 1<<10     //Must not be more than 65536
-
-int amoveo_mine_gpu(BYTE nonce[32], unsigned int difficulty, BYTE data[32], unsigned int,unsigned int,unsigned int,unsigned int,double*);
+int amoveo_mine_gpu(BYTE nonce[23], unsigned int difficulty, BYTE data[55], unsigned int,unsigned int,unsigned int,double*);
 
 WORD hash2integer(BYTE h[32]);
 static WORD pair2sci(WORD l[2]);
-int check_pow(BYTE nonce[32], int, BYTE data[32]);
+int check_pow(BYTE nonce[23], int, BYTE data[32]);
+
+logbase2(uint64_t x){__float128 y=x;__int128_t i = *(__int128_t*)&y;return x?(i>>112)-16383:-1;}
 
 WORD hash2integer(BYTE h[32]) {
-    WORD x = 0;
-    WORD y[2];
-    for (int i = 0; i < 31; i++) {
-	if (h[i] == 0) {
-	    x += 8;
-	    y[1] = h[i+1];
-	    continue;
-	} else if (h[i] < 2) {
-	    x += 7;
-	    y[1] = (h[i] * 128) + (h[i+1] / 2);
-	} else if (h[i] < 4) {
-	    x += 6;
-	    y[1] = (h[i] * 64) + (h[i+1] / 4);
-	} else if (h[i] < 8) {
-	    x += 5;
-	    y[1] = (h[i] * 32) + (h[i+1] / 8);
-	} else if (h[i] < 16) {
-	    x += 4;
-	    y[1] = (h[i] * 16) + (h[i+1] / 16);
-	} else if (h[i] < 32) {
-	    x += 3;
-	    y[1] = (h[i] * 8) + (h[i+1] / 32);
-	} else if (h[i] < 64) {
-	    x += 2;
-	    y[1] = (h[i] * 4) + (h[i+1] / 64);
-	} else if (h[i] < 128) {
-	    x += 1;
-	    y[1] = (h[i] * 2) + (h[i+1] / 128);
-	} else {
-	    y[1] = h[i];
-	}
-	break;
+  WORD x = 0;
+  WORD z = 0;
+  for (int i = 0; i < 31; i++) {
+    if (h[i] == 0) {
+      x += 8;
+      continue;
+    } else if (h[i] < 2) {
+      x += 7;
+      z = h[i+1];
+    } else if (h[i] < 4) {
+      x += 6;
+      z = (h[i+1] / 2) + ((h[i] % 2) * 128);
+    } else if (h[i] < 8) {
+      x += 5;
+      z = (h[i+1] / 4) + ((h[i] % 4) * 64);
+    } else if (h[i] < 16) {
+      x += 4;
+      z = (h[i+1] / 8) + ((h[i] % 8) * 32);
+    } else if (h[i] < 32) {
+      x += 3;
+      z = (h[i+1] / 16) + ((h[i] % 16) * 16);
+    } else if (h[i] < 64) {
+      x += 2;
+      z = (h[i+1] / 32) + ((h[i] % 32) * 8);
+    } else if (h[i] < 128) {
+      x += 1;
+      z = (h[i+1] / 64) + ((h[i] % 64) * 4);
+    } else {
+      z = (h[i+1] / 128) + ((h[i] % 128) * 2);
     }
-    y[0] = x;
-    return(pair2sci(y));
+    break;
+  }
+  WORD y[2];
+  y[0] = x;
+  y[1] = z;
+  return(pair2sci(y));
 }
 static WORD pair2sci(WORD l[2]) {
-    return((256*l[0]) + l[1]);
+  return((256*l[0]) + l[1]);
 }
 
-int get_pow(BYTE nonce[32], int difficulty, BYTE data[32])
+int get_pow(BYTE nonce[23], int difficulty, BYTE data[32])
 {
-    BYTE text[66];//32+2+32
+    BYTE text[55];//32+23
     for (int i = 0; i < 32; i++) 
 	text[i] = data[i];
-    text[32] = difficulty / 256;
-    text[33] = difficulty % 256;
-    for (int i = 0; i < 32; i++) 
-	text[i+34] = nonce[i]; 
-
+    for (int i = 0; i < 23; i++) 
+	text[i+32] = nonce[i];
     SHA256_CTX ctx;
     sha256_init(&ctx);
-    sha256_update(&ctx, text, 66);
+    sha256_update(&ctx, text, 55);
     BYTE buf[32];
     sha256_final(&ctx, buf);
-
+ 
     return hash2integer(buf);
 }
 
-int check_pow(BYTE nonce[32], int difficulty, BYTE data[32]) {
+int check_pow(BYTE nonce[23], int difficulty, BYTE data[32]) {
     return(get_pow(nonce,difficulty,data) > difficulty);
 }
-void write_nonce(BYTE x[32], int id) {
+void write_nonce(BYTE x[23], int id) {
     char noncefilename[32];
     sprintf(noncefilename,"./mining_data/nonce%d",id);
     FILE *f = fopen(noncefilename, "w");
@@ -88,7 +86,7 @@ void write_nonce(BYTE x[32], int id) {
 	//exit(1);
     }
     rewind(f);//unnecessary line?
-    fwrite(x, 1, 32, f);
+    fwrite(x, 1, 23, f);
     fclose(f);
     return;
 }
@@ -120,7 +118,7 @@ int get_height(){
     buf[end]=0;
     return atoi(buf+start+1);
 }
-void read_input(BYTE B[32], BYTE N[32], WORD id, unsigned int* blockdiff, unsigned int* workdiff) {
+void read_input(BYTE B[32], BYTE N[23], WORD id, unsigned int* blockdiff, unsigned int* workdiff) {
     FILE *fileptr;
     char inputfilename[32];
     sprintf(inputfilename,"./mining_data/mining_input%d",id);
@@ -130,14 +128,10 @@ void read_input(BYTE B[32], BYTE N[32], WORD id, unsigned int* blockdiff, unsign
     //ftell returns a long, maybe we shouldn't truncate it.
     rewind(fileptr); 
     fread(B, 32, 1, fileptr);
-    fread(N, 32, 1, fileptr);
-    N[28] = id % 256;
-    N[29] = (id / 256) % 256;
-    N[30] = ((id / 256) / 256) % 256;
-    N[31] = (((id / 256) / 256) / 256) % 256;
+    fread(N, 23, 1, fileptr);
     //ASSUME that blockdiff+separator+workdiff will not be > 16 digits
     BYTE buffer[16] = { 0 }; 
-    fread(buffer, filelen-64, 1, fileptr);
+    fread(buffer, filelen-55, 1, fileptr);
     unsigned int bdiff = 0;
     BYTE c = 1;
     int i = 0;
@@ -171,10 +165,10 @@ int correctness_CUDA(){
     double timeout = 10.0;
     srand(time(NULL));
     
-    BYTE nonce[32];
-    BYTE data[66];
+    BYTE nonce[23];
+    BYTE data[55];
 
-    unsigned int d = 3000; //some low difficulty
+    unsigned int d = 4000; //some low difficulty
     unsigned int gdim = 1<<8;
     unsigned int bdim = 1<<10;
     double numHashes;
@@ -189,26 +183,18 @@ int correctness_CUDA(){
     t_start = clock();
     do{
 	for(int i = 0; i < 32; i++)
-	{
 	    data[i] = rand()%255;
-	    data[34+i] = 0;
-	}
-	data[32] = d/256;
-	data[33] = d%256;
+	
 	int r;
-	for (int i = 0; i < 30; i++)
+	for (int i = 0; i < 23; i++)
 	{
 	    r = rand()%255;
-	    data[i+34] = r;
+	    data[i+32] = r;
 	    nonce[i] = r;
 	}
-	data[64] = 0;
-	data[65] = 0;
-	nonce[30] = 0;
-	nonce[31] = 0;
 
 	//Kernel should be able to find solution within 1 round
-	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0,1,&numHashes);
+	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0,&numHashes);
 
 	if(success){
 	    m++;
@@ -236,14 +222,13 @@ void tune_nonce(int trials_per_run){
     
     unsigned int d = 1000000; //some super-high difficulty
 
-    BYTE nonce[32];
-    BYTE data[66];
+    BYTE nonce[23];
+    BYTE data[55];
 
     clock_t t_start;
     clock_t t_end;
     double elapsed;
-
-    unsigned int best_n = 0;
+    
     unsigned int best_bdim = 0;
     unsigned int best_gdim = 0;
     double best_elapsed = 0;
@@ -251,59 +236,51 @@ void tune_nonce(int trials_per_run){
     
     printf("Starting search for optimal parameters at %d trials per run.\n",trials_per_run);
     clock_t tune_start = clock();
-    for(unsigned int gdim = 1; gdim <= 65536; gdim*=2)
+    for(unsigned int gdim = 1; gdim <= 32768; gdim*=2)
     {
-	for(unsigned int n = 1; n <= 65536; n*=2)
+	for(unsigned int bdim = 1; bdim <= 1024; bdim*=2)
 	{
-	    for(unsigned int bdim = 1; bdim <= 1024; bdim*=2)
-	    {
-		double total_HashSpeed = 0;
-	
-		double numHashes;
-		for(int t = 0; t < trials_per_run; t++)
-		{
-		    for(int i = 0; i < 32; i++)
-		    {
-			data[i] = rand()%255;
-			data[34+i] = 0;
-		    }
-		    data[32] = d/256;
-		    data[33] = d%256;
-		    int r;
-		    for (int i = 0; i < 30; i++)
-		    {
-			r = rand()%255;
-			data[i+34] = r;
-			nonce[i] = r;
-		    }
-		    t_start = clock();
-		    int success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,t,n,&numHashes);
-		    t_end = clock();
-		    if(success)
-			printf("Difficulty is too low! Hashrate estimate will be incorrect\n");
+	    double total_HashSpeed = 0;
 	    
-		    elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-		    total_HashSpeed += numHashes/(1000000.0*elapsed);
-		}
-		double average_HashSpeed = total_HashSpeed/trials_per_run;
-		printf("NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
-		fprintf(f,"NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s\n, HashPower : %5.0f (%5.0f) MH/s",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
-		fflush(f);
-		if(average_HashSpeed > best_HashSpeed)
+	    double numHashes;
+	    for(int t = 0; t < trials_per_run; t++)
+	    {
+		for(int i = 0; i < 32; i++)
+		    data[i] = rand()%255;
+		
+		int r;
+		for (int i = 0; i < 23; i++)
 		{
-		    best_HashSpeed = average_HashSpeed;
-		    best_n = n;
-		    best_bdim = bdim;
-		    best_gdim = gdim;
-		    best_elapsed = elapsed;
+		    r = rand()%255;
+		    data[i+32] = r;
+		    nonce[i] = r;
 		}
+		t_start = clock();
+		int success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,t,&numHashes);
+		t_end = clock();
+		if(success)
+		    printf("Difficulty is too low! Hashrate estimate will be incorrect\n");
+	    
+		elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+		total_HashSpeed += numHashes/(1000000.0*elapsed);
+	    }
+	    double average_HashSpeed = total_HashSpeed/trials_per_run;
+	    printf("BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+	    fprintf(f,"BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s",bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+	    fflush(f);
+	    if(average_HashSpeed > best_HashSpeed)
+	    {
+		best_HashSpeed = average_HashSpeed;
+		best_bdim = bdim;
+		best_gdim = gdim;
+		best_elapsed = elapsed;
 	    }
 	}
     }
     clock_t tune_end = clock();
-    double tune_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
+    double tune_elapsed = ((double)(tune_end-t_start))/CLOCKS_PER_SEC;
     printf("Tuning took %0.0f seconds at %d trials per run\n",tune_elapsed,trials_per_run);
-    printf("Best NonceRounds : %d, Best BlockDim : %d, Best GridDim : %d, Elapsed %0.1f seconds - %0.0f MH/s\n",best_n,best_bdim,best_gdim,best_elapsed,best_HashSpeed);
+    printf("Best BlockDim : %d, Best GridDim : %d, Elapsed %0.1f seconds - %0.0f MH/s\n",best_bdim,best_gdim,best_elapsed,best_HashSpeed);
     fclose(f);
 }
 
@@ -311,8 +288,8 @@ void tune_nonce(int trials_per_run){
 void perf_CUDA(){
     srand(time(NULL));
     
-    BYTE nonce[32];
-    BYTE data[66];
+    BYTE nonce[23];
+    BYTE data[55];
 
     unsigned int d = 1000000; //some super-high difficulty
     unsigned int gdim = GridDim;
@@ -322,17 +299,13 @@ void perf_CUDA(){
     printf("Starting hash rate test for 10 trials.\n");
      
     for(int i = 0; i < 32; i++)
-    {
 	data[i] = rand()%255;
-	data[34+i] = 0;
-    }
-    data[32] = d/256;
-    data[33] = d%256;
+    
     int r;
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 23; i++)
     {
 	r = rand()%255;
-	data[i+34] = r;
+	data[i+32] = r;
 	nonce[i] = r;
     }
     
@@ -349,7 +322,7 @@ void perf_CUDA(){
     t_start = clock();
     do{			
 	t_cudastart = clock();
-	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,m,NonceRounds,&numHashes);
+	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,m,&numHashes);
 			
 	m++;
 	t_end = clock();
@@ -371,7 +344,7 @@ int main(int argc, char *argv[])
 	return(0);
 
     BYTE bhash[32];
-    BYTE nonce[32];
+    BYTE nonce[23];
     WORD id;
     if (argc > 1) {
 	if(strcmp(argv[1],"perftest")==0)
@@ -404,13 +377,11 @@ int main(int argc, char *argv[])
     fprintf(fdebug,"Height : %d, Block Difficulty : %d, Work Difficulty : %d\n",init_height, blockdiff, workdiff);
     fflush(fdebug);
     
-    BYTE bdata[66];//32+2+32 
+    BYTE bdata[55];//32+23 
     for (int i = 0; i < 32; i++) 
 	bdata[i] = bhash[i];
-    bdata[32] = blockdiff / 256;
-    bdata[33] = blockdiff % 256;
-    for (int i = 0; i < 30; i++)
-	bdata[i+34] = nonce[i];
+    for (int i = 0; i < 23; i++)
+	bdata[i+32] = nonce[i];
     
     unsigned int bdim = BlockDim;
     unsigned int gdim = GridDim;
@@ -424,32 +395,43 @@ int main(int argc, char *argv[])
     double round_elapsed;
 
     double numHashes;
-  
+
+    uint64_t kernelDims = gdim;
+    kernelDims *= gdim;
+    kernelDims *= bdim;
+    int kernelDimsExp = logbase2(kernelDims);
+    int maxRoundsExp = 40-kernelDimsExp; //ASSUME that there are 5 bytes in kernel for nonce exploration
+    unsigned int maxRounds = maxRoundsExp > 0 ? 1<<maxRoundsExp : 0;
+    maxRounds += 1;
+
+    fflush(fdebug);
+    
     t_start = clock();
     t_round = clock();
     do{
-	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m,NonceRounds,&numHashes);
+	m++;
+	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m,&numHashes);
       
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
 	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	fprintf(fdebug,"Round %d Hash Rate : %0.2f MH/s took %0.1f s, %0.1f s total.\n",m,numHashes/(1000000.0*round_elapsed),round_elapsed,total_elapsed);
+	fprintf(fdebug,"Round %d/%d Hash Rate : %0.2f MH/s took %0.1f s, %0.1f s total.\n",m,maxRounds,numHashes/(1000000.0*round_elapsed),round_elapsed,total_elapsed);
 	fflush(fdebug);
-	m++;
+	
 	t_round = clock();
 
 	if(get_height() != init_height)
 	    break;
-    }while(!success);
+    }while(!success && m < maxRounds);
     
     if(success){
 	fprintf(fdebug,"Nonce found after %f seconds - Difficulty %d\n",total_elapsed,get_pow(nonce,blockdiff,bhash));
 	fprintf(fdebug,"Block : ");
-	for(int i = 0; i < 34; i++)
+	for(int i = 0; i < 32; i++)
 	    fprintf(fdebug,"%02X",bdata[i]);
 	fprintf(fdebug,"\n");
 	fprintf(fdebug,"Nonce : ");
-	for(int i = 0; i < 32; i++)
+	for(int i = 0; i < 23; i++)
 	    fprintf(fdebug,"%02X",nonce[i]);
 	fprintf(fdebug,"\n");
 	

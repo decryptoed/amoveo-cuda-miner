@@ -9,7 +9,7 @@ extern "C" {
 	#include "utils.h"
 }
 
-#define DATASIZE 66
+#define DATASIZE 55
 
 __global__ void kernel_sha256(BYTE *data, unsigned int* difficulty, Nonce_result *nr,unsigned int *multiplier);
 __device__ WORD hash2int(BYTE h[32]);
@@ -25,7 +25,7 @@ inline void gpuAssert(cudaError_t code, char *file, int line, bool abort)
 
 #define CUDA_SAFE_CALL(ans) { gpuAssert((ans), __FILE__, __LINE__, true); }
 
-extern "C" bool amoveo_mine_gpu(BYTE nonce[32],unsigned int difficulty,BYTE data[66],unsigned int GDIM, unsigned int BDIM, unsigned int multiplier,unsigned int nonceround, double *numHashes)
+extern "C" bool amoveo_mine_gpu(BYTE nonce[23],unsigned int difficulty,BYTE data[55],unsigned int GDIM, unsigned int BDIM, unsigned int multiplier, double *numHashes)
 {   
     //Initialize Cuda Grid variables
     dim3 DimGrid(GDIM,GDIM);
@@ -67,8 +67,8 @@ extern "C" bool amoveo_mine_gpu(BYTE nonce[32],unsigned int difficulty,BYTE data
 
     //Copy nonce if found
     if(h_nr.nonce_found){
-	for(int i=34; i<66;i++)
-	    nonce[i-34]=data[i];	
+	for(int i=32; i<55;i++)
+	    nonce[i-32]=data[i];	
 	for(int i=0; i<sizeof(int64_t); i++)
 	    nonce[i] = ((BYTE*)(&h_nr.nonce))[i];
     }
@@ -78,42 +78,43 @@ extern "C" bool amoveo_mine_gpu(BYTE nonce[32],unsigned int difficulty,BYTE data
 }
 
 //Amoveo's hash2int function to calculate difficulty
-__device__ WORD hash2int(BYTE h[32]){
+__device__ WORD hash2int(BYTE h[32]) {
   WORD x = 0;
-  WORD y[2];
+  WORD z = 0;
   for (int i = 0; i < 31; i++) {
-    if (h[i] == 0) { 
-      x += 8; //8 zeros
-      y[1] = h[i+1];
+    if (h[i] == 0) {
+      x += 8;
       continue;
     } else if (h[i] < 2) {
-      x += 7; //7 leading zeros
-      y[1] = (h[i] * 128) + (h[i+1] / 2);
+      x += 7;
+      z = h[i+1];
     } else if (h[i] < 4) {
-      x += 6; //6 leading zeros
-      y[1] = (h[i] * 64) + (h[i+1] / 4);
+      x += 6;
+      z = (h[i+1] / 2) + ((h[i] % 2) * 128);
     } else if (h[i] < 8) {
-      x += 5; //5 leading zeros
-      y[1] = (h[i] * 32) + (h[i+1] / 8);
+      x += 5;
+      z = (h[i+1] / 4) + ((h[i] % 4) * 64);
     } else if (h[i] < 16) {
-      x += 4; //4 leading zeros
-      y[1] = (h[i] * 16) + (h[i+1] / 16);
+      x += 4;
+      z = (h[i+1] / 8) + ((h[i] % 8) * 32);
     } else if (h[i] < 32) {
-      x += 3; //3 leading zeros
-      y[1] = (h[i] * 8) + (h[i+1] / 32);
+      x += 3;
+      z = (h[i+1] / 16) + ((h[i] % 16) * 16);
     } else if (h[i] < 64) {
-      x += 2; //2 leading zeros
-      y[1] = (h[i] * 4) + (h[i+1] / 64);
+      x += 2;
+      z = (h[i+1] / 32) + ((h[i] % 32) * 8);
     } else if (h[i] < 128) {
-      x += 1; //1 leading zero
-      y[1] = (h[i] * 2) + (h[i+1] / 128);
+      x += 1;
+      z = (h[i+1] / 64) + ((h[i] % 64) * 4);
     } else {
-      y[1] = h[i];
+      z = (h[i+1] / 128) + ((h[i] % 128) * 2);
     }
-    break; //Break if less than 8 zeros encountered
+    break;
   }
+  WORD y[2];
   y[0] = x;
-  return ((256*y[0])+y[1]);
+  y[1] = z;
+  return 256*y[0]+y[1];
 }
 
 //Constants for SHA-256
@@ -251,15 +252,15 @@ __global__ void kernel_sha256(BYTE *data, unsigned int *difficulty, Nonce_result
 
   BYTE* byte_nonce = (BYTE *)&nonce;
 
-  BYTE l_data[66];
-  for(i=0;i<66;i++)
+  BYTE l_data[55];
+  for(i=0;i<55;i++)
       l_data[i] = data[i];
   for(i=0;i<sizeof(int64_t);i++)
-      l_data[34+i] = byte_nonce[i];
+      l_data[32+i] = byte_nonce[i];
   
   SHA256_CTX ctx;
   d_sha256_init(&ctx);
-  d_sha256_update(&ctx,l_data,66);
+  d_sha256_update(&ctx,l_data,55);
 
   BYTE hash[32];
   d_sha256_final(&ctx,hash);
