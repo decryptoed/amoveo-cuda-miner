@@ -1,16 +1,16 @@
 Measured GPU Speeds:
-- V100 - 429 MH/s default, 6400 MH/s upgraded
-- P100 - 293 MH/s default, ? MH/s upgraded
-- GTX1080 - 146 MH/s default, 2700 MH/s upgraded 
-- GTX1080Ti - 233 MH/s default, 3500 MH/s upgraded
-- GTX1050 - 61 MH/s default, 700 MH/s upgraded
-- K80 - 83 MH/s default, ? MH/s upgraded
+- V100 - ? MH/s default, ? MH/s upgraded
+- P100 - ? MH/s default, ? MH/s upgraded
+- GTX1080 - 300 MH/s default, 2600 MH/s upgraded 
+- GTX1080Ti - ? MH/s default, ? MH/s upgraded
+- GTX1050 - ? MH/s default, ? MH/s upgraded
+- K80 - ? MH/s default, ? MH/s upgraded
 
 Dependencies :
 - Ubuntu 16.04
 - [CUDA 8.0 or later](https://askubuntu.com/a/799185)
 ```
-sudo apt-get install erlang libncurses5-dev libssl-dev unixodbc-dev g++ git
+sudo apt-get install gpg erlang libncurses5-dev libssl-dev unixodbc-dev g++ git
 sudo apt-get install build-essential
 sudo apt-get install curl
 ```
