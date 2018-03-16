@@ -1,4 +1,0 @@
-There are 3 parameters in amoveo_pow_gpu.c that should be tuned to your GPU to achieve a hashrate that is as close to optimal as possible:
-- NonceRounds
-- BlockDim
-- GridDim
