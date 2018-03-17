@@ -408,6 +408,9 @@ int main(int argc, char *argv[])
     kernelDims *= bdim;
     int kernelDimsExp = logbase2(kernelDims);
     int maxRoundsExp = 40-kernelDimsExp; //ASSUME that there are 5 bytes in kernel for nonce exploration
+    if(maxRoundsExp < 0)
+	fprintf(fdebug,"WARNING : Invalid GridDim and BlockDim! GridDim*GridDim*BlockDim should be less than 2^40\n");
+    
     unsigned int maxRounds = maxRoundsExp > 0 ? 1<<maxRoundsExp : 0;
     maxRounds += 1;
 
