@@ -252,8 +252,8 @@ int correctness_CUDA(){
     return 1;
 }
 
-void tune_nonce(int trials_per_run){
-    FILE* f = fopen("noncetune.txt","w");
+void tune(int trials_per_run){
+    FILE* f = fopen("tune.txt","w");
     
     srand(time(NULL));
     
@@ -296,8 +296,8 @@ void tune_nonce(int trials_per_run){
 		    total_HashSpeed += numHashes/(1000000.0*elapsed);
 		}
 		double average_HashSpeed = total_HashSpeed/trials_per_run;
-		printf("NonceRounds : %4d (%4d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
-		fprintf(f,"NonceRounds : %4d (%4d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+		printf("NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+		fprintf(f,"NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
 		fflush(f);
 		if(average_HashSpeed > best_HashSpeed)
 		{
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 	}else if(strcmp(argv[1],"tune")==0)
 	{
 	    int trials_per_run = (argc == 3) ? atoi(argv[2]) : 1;
-	    tune_nonce(trials_per_run);
+	    tune(trials_per_run);
 	    return(0);
 	}else if (strcmp(argv[1],"estimate")==0)
 	{
