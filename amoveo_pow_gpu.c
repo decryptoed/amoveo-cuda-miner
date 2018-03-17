@@ -58,6 +58,19 @@ static WORD pair2sci(WORD l[2]) {
   return((256*l[0]) + l[1]);
 }
 
+void generate_random_block(BYTE* data, BYTE* nonce){
+    for(int i = 0; i < 32; i++)
+	data[i] = rand()%255;
+	
+    int r;
+    for (int i = 0; i < 23; i++)
+    {
+	r = rand()%255;
+	data[i+32] = r;
+	nonce[i] = r;
+    }
+}
+
 int get_pow(BYTE nonce[23], int difficulty, BYTE data[32])
 {
     BYTE text[55];//32+23
@@ -159,6 +172,40 @@ void read_input(BYTE B[32], BYTE N[23], WORD id, unsigned int* blockdiff, unsign
     *workdiff = wdiff;
 }
 
+void estimate_hashrate(unsigned int difficulty, unsigned int check_every)
+{
+    srand(time(NULL));
+    
+    double difficulty_zeros = (double)(difficulty/256); //Minimum Number of zeros to find a solution
+    //probability that you get at least that many zeros for a single hash = (0.5)^difficulty_zeros
+    double probability_zeros = pow(0.5,difficulty_zeros);
+
+    BYTE data[55];
+    BYTE nonce[32];
+
+    unsigned int m = 0;
+    double numHashes;
+
+    unsigned int num_successes = 0;
+
+    double reported_Hashrate;
+    
+    double elapsed;
+    clock_t t_start = clock();
+    
+    while(true){
+	generate_random_block(data,nonce);
+
+	if(amoveo_mine_gpu(nonce,difficulty,data,GridDim,BlockDim,m,NonceRounds,&numHashes))
+	    num_successes++;
+	
+	m++;
+	if(m % check_every == 0){
+	    elapsed = ((double)(clock()-t_start))/CLOCKS_PER_SEC;
+	    printf("Elapsed : %0.1f s, Trials : %d, Successes : %d, Estimated Hashrate : %0.1f MH/s\n",elapsed,m,num_successes,num_successes*1.0/(1000000.0*elapsed*probability_zeros));
+	}
+    }
+}
 
 int correctness_CUDA(){
     printf("Starting correctness test for 10 seconds.\n");
@@ -182,17 +229,7 @@ int correctness_CUDA(){
     
     t_start = clock();
     do{
-	for(int i = 0; i < 32; i++)
-	    data[i] = rand()%255;
-	
-	int r;
-	for (int i = 0; i < 23; i++)
-	{
-	    r = rand()%255;
-	    data[i+32] = r;
-	    nonce[i] = r;
-	}
-
+	generate_random_block(data,nonce);
 	//Kernel should be able to find solution within 1 round
 	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0,1,&numHashes);
 
@@ -248,16 +285,7 @@ void tune_nonce(int trials_per_run){
 		double numHashes;
 		for(int t = 0; t < trials_per_run; t++)
 		{
-		    for(int i = 0; i < 32; i++)
-			data[i] = rand()%255;
-		
-		    int r;
-		    for (int i = 0; i < 23; i++)
-		    {
-			r = rand()%255;
-			data[i+32] = r;
-			nonce[i] = r;
-		    }
+		    generate_random_block(data,nonce);
 		    t_start = clock();
 		    int success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,t,n,&numHashes);
 		    t_end = clock();
@@ -304,16 +332,7 @@ void perf_CUDA(){
 
     printf("Starting hash rate test for 10 trials.\n");
      
-    for(int i = 0; i < 32; i++)
-	data[i] = rand()%255;
-    
-    int r;
-    for (int i = 0; i < 23; i++)
-    {
-	r = rand()%255;
-	data[i+32] = r;
-	nonce[i] = r;
-    }
+    generate_random_block(data,nonce);
     
     unsigned int m = 0;
     double cuda_elapsed = 0;
@@ -366,6 +385,12 @@ int main(int argc, char *argv[])
 	{
 	    int trials_per_run = (argc == 3) ? atoi(argv[2]) : 1;
 	    tune_nonce(trials_per_run);
+	    return(0);
+	}else if (strcmp(argv[1],"estimate")==0)
+	{
+	    unsigned int diff = atoi(argv[2]);
+	    unsigned int checkevery = atoi(argv[3]);
+	    estimate_hashrate(diff,checkevery);
 	    return(0);
 	}
 	id = atoi(argv[1]);
