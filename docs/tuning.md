@@ -1,6 +1,7 @@
-There are 2 parameters #define-d in gpuparams.h that should be tuned to your GPU to achieve good mining performance:
+There are 3 parameters #define-d in gpuparams.h that should be tuned to your GPU to achieve good mining performance:
 - BlockDim
 - GridDim
+- NonceRounds
 
 To start the tuning, simply run 'sh tune.sh'. The tuner will run through the valid powers of 2 for each of those parameters, displaying the parameter and the corresponding estimated hashrate. Beside each parameter, the one that corresponds to the best hashrate so far is displayed in brackets. The tuner also shows how long the kernel takes (elapsed seconds) for those parameters.
 
