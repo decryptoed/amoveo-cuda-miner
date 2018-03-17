@@ -25,7 +25,7 @@ inline void gpuAssert(cudaError_t code, char *file, int line, bool abort)
 
 #define CUDA_SAFE_CALL(ans) { gpuAssert((ans), __FILE__, __LINE__, true); }
 
-extern "C" bool amoveo_mine_gpu(BYTE nonce[23],unsigned int difficulty,BYTE data[55],unsigned int GDIM, unsigned int BDIM, unsigned int multiplier, double *numHashes)
+extern "C" bool amoveo_mine_gpu(BYTE nonce[23],unsigned int difficulty,BYTE data[55],unsigned int GDIM, unsigned int BDIM, unsigned int multiplier, unsigned int nonceRounds,double *numHashes)
 {   
     //Initialize Cuda Grid variables
     dim3 DimGrid(GDIM,GDIM);
