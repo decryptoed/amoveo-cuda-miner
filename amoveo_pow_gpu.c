@@ -297,7 +297,7 @@ void tune(int trials_per_run){
 		}
 		double average_HashSpeed = total_HashSpeed/trials_per_run;
 		printf("NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
-		fprintf(f,"NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
+		fprintf(f,"NonceRounds : %5d (%5d), BlockDim : %4d (%4d), GridDim : %5d (%5d), Elapsed %5.1f (%5.1f) s, HashPower : %5.0f (%5.0f) MH/s\n",n,best_n,bdim,best_bdim,gdim,best_gdim,elapsed,best_elapsed,average_HashSpeed,best_HashSpeed);
 		fflush(f);
 		if(average_HashSpeed > best_HashSpeed)
 		{
