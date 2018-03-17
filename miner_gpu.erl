@@ -2,8 +2,8 @@
 
 -export([start/0, unpack_mining_data/1]).
 %-define(Peer, "http://localhost:8081/").%for a full node on same computer.
--define(Peer, "http://159.89.106.253:8085/").%for a mining pool on the same computer.
-%-define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
+%-define(Peer, "http://159.89.106.253:8085/").%for a mining pool on the same computer.
+-define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
 -define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
