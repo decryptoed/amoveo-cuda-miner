@@ -21,7 +21,7 @@ Setup [Only needed for the first time]:
 3. [Tune the parameters of your GPU](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/tuning.md).
 
 Steps to mine:
-1. sh start_miner.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md)). Advanced usage : '''sh start_miner.sh [GPU id] [Pubkey] [Pool Address]'''
+1. sh start_miner.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md)). Advanced usage : `sh start_miner.sh [GPU id] [Pubkey] [Pool Address]`
 2. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
 3. sh clean.sh when finished mining
 
