@@ -1,7 +1,7 @@
 Measured GPU Speeds:
 - V100 - 728 MH/s default, 7094 MH/s upgraded
 - P100 - ? MH/s default, ? MH/s upgraded
-- GTX1080 - 300 MH/s default, 2950 MH/s upgraded 
+- GTX1080 - 300 MH/s default, 2984 MH/s upgraded 
 - GTX1080Ti - ? MH/s default, ? MH/s upgraded
 - GTX1050 - ? MH/s default, ? MH/s upgraded
 - K80 - ? MH/s default, ? MH/s upgraded
@@ -16,12 +16,12 @@ sudo apt-get install curl
 ```
 
 Setup [Only needed for the first time]:
-1. Set Pubkey in miner_gpu.erl
-2. Set [mining pool address](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/pools.md) in miner_gpu.erl if necessary.
+1. Set DEFAULT_PUBKEY in start_miner.sh
+2. Set DEFAULT_POOL in start_miner.sh as the desired [mining pool address](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/pools.md) if necessary.
 3. [Tune the parameters of your GPU](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/tuning.md).
 
 Steps to mine:
-1. sh start_miner.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md))
+1. sh start_miner.sh ([Multi-GPU Instructions](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/Multi-GPU.md)). Advanced usage : '''sh start_miner.sh [GPU id] [Pubkey] [Pool Address]'''
 2. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
 3. sh clean.sh when finished mining
 
