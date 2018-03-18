@@ -1,16 +1,12 @@
 -module(miner_gpu).
 
--export([start/0, unpack_mining_data/1]).
-%-define(Peer, "http://localhost:8081/").%for a full node on same computer.
-%-define(Peer, "http://159.89.106.253:8085/").%for a mining pool on the same computer.
--define(Peer, "http://amoveopool.com/work/").%for a mining pool on an external server
--define(Pubkey, <<"BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=">>).
+-export([start/0, unpack_mining_data/2]).
 -define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
 
-unpack_mining_data(R) ->
-    case string:equal(?Peer,"http://amoveopool.com/work/") of
+unpack_mining_data(R,Peer) ->
+    case string:equal(Peer,"http://amoveopool.com/work/") of
 	true->
 	    <<_:(8*11), R2/binary>> = list_to_binary(R),
 	    {First,R3} = slice(R2,hd("\"")),
@@ -30,38 +26,40 @@ unpack_mining_data(R) ->
     end,
     {BlockHash,BlockDiff,ShareDiff}.
 
-connectionInfo() ->
+connectionInfo(Pubkey,Peer) ->
     flush(),
-    case string:equal(?Peer,"http://amoveopool.com/work/") of
-	true -> 
-	    Data = "[\"mining_data\",\""++binary_to_list(?Pubkey)++"\"]",
+    case string:equal(Peer,"http://amoveopool.com/work/") of
+	true ->
+	    Data = "[\"mining_data\",\""++Pubkey++"\"]",
 	    Server = "http://AmoveoPool.com/work"; 
 	false -> 
 	    Data = <<"[\"mining_data\"]">>,
-	    Server = ?Peer
+	    Server = Peer
     end,
     {Data,Server}.
 
 start() ->
+    {_,[[Pubkey]]} = init:get_argument(pubkey),
+    {_,[[Peer]]} = init:get_argument(pool),
     io:fwrite("Started mining, "),
     io:fwrite("see debug"++os:getenv("CUDA_VISIBLE_DEVICES")++".txt for more info.\n"),
-    io:fwrite("Your Pubkey is "++binary_to_list(?Pubkey)++"\n"),
-    io:fwrite("You are connecting to "++?Peer++"\n"),
-    miner().
+    io:fwrite("Your Pubkey is "++Pubkey++"\n"),
+    io:fwrite("You are connecting to "++Peer++"\n"),
+    miner(Pubkey,Peer).
 
 getTime()->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
     lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])).
     
 
-miner() ->
-    {Data,Server} = connectionInfo(),
+miner(Pubkey, Peer) ->
+    {Data,Server} = connectionInfo(Pubkey,Peer),
     io:fwrite(getTime()++" - Ask server for work. "),
     R = talk_helper(Data,Server,1000),
     if
 	is_list(R) ->
-	    {BlockHash,BlockDiff,WorkDiff} = unpack_mining_data(R),
-	    start_gpu_miner(BlockHash,BlockDiff,WorkDiff);
+	    {BlockHash,BlockDiff,WorkDiff} = unpack_mining_data(R,Peer),
+	    start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer);
 	is_atom(R) ->
 	    timer:sleep(1000),
 	    start()
@@ -79,7 +77,7 @@ read_nonce(N) ->
 	    read_nonce(N-1)
     end.
 
-start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
+start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer) ->
     NonceRand = crypto:strong_rand_bytes(23),
     GPUID = os:getenv("CUDA_VISIBLE_DEVICES"),
     ok = file:write_file("./mining_data/"++"nonce"++GPUID, <<"">>),
@@ -95,13 +93,14 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff) ->
 	    io:fwrite(base64:encode(<<BlockHash/binary,Nonce:184>>)),
 	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
             BinNonce = base64:encode(<<Nonce:184>>),
-            Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, ?Pubkey/binary, <<"\"]">>/binary>>,
-            talk_helper(Data, ?Peer, 5),
+	    BinPubkey = list_to_binary(Pubkey),
+            Data = << <<"[\"work\",\"">>/binary, BinNonce/binary, <<"\",\"">>/binary, BinPubkey/binary, <<"\"]">>/binary>>,
+            talk_helper(Data, Peer, 5),
             timer:sleep(100);
 	{Port, {exit_status,0}}->
             ok		
     end,
-    miner().
+    miner(Pubkey,Peer).
 
 talk_helper2(Data, Peer) ->
     httpc:request(post, {Peer, [], "application/octet-stream", iolist_to_binary(Data)}, [{timeout, 3000}], []).
