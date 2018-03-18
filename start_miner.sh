@@ -2,7 +2,7 @@ export CUDA_VISIBLE_DEVICES=${1-0}
 
 DEFAULT_PUBKEY="BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM"
 
-DEFAULT_POOL="http://amoveopool.com/work/"
+DEFAULT_POOL="http://amoveopool2.com/work/"
 
 if [ -e key ]
 then
