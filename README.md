@@ -1,7 +1,7 @@
 Measured GPU Speeds:
-- V100 - ? MH/s default, ? MH/s upgraded
+- V100 - ? MH/s default, 7096 MH/s upgraded
 - P100 - ? MH/s default, ? MH/s upgraded
-- GTX1080 - 300 MH/s default, 2600 MH/s upgraded 
+- GTX1080 - 300 MH/s default, 2950 MH/s upgraded 
 - GTX1080Ti - ? MH/s default, ? MH/s upgraded
 - GTX1050 - ? MH/s default, ? MH/s upgraded
 - K80 - ? MH/s default, ? MH/s upgraded
