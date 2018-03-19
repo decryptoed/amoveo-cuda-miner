@@ -1,7 +1,7 @@
 -module(miner_gpu).
 
 -export([start/0, unpack_mining_data/2]).
--define(timeout, 600).%how long to wait in seconds before checking if new mining data is available.
+-define(timeout, 5000).%how long to wait in milliseconds before checking if new mining data is available.
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 %This should probably be around 1/20th of the blocktime.
 
@@ -77,20 +77,38 @@ read_nonce(N) ->
 	    read_nonce(N-1)
     end.
 
-start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer) ->
+write_mining_data(BlockHash,BlockDiff,WorkDiff)->
     NonceRand = crypto:strong_rand_bytes(23),
     GPUID = os:getenv("CUDA_VISIBLE_DEVICES"),
     ok = file:write_file("./mining_data/"++"nonce"++GPUID, <<"">>),
     DiffsDelimiter = <<"|">>,
-    BlockDiffInt = list_to_integer(binary_to_list(BlockDiff)),
-    WorkDiffInt = list_to_integer(binary_to_list(WorkDiff)),
-    file:write_file("./mining_data/mining_input"++GPUID, <<BlockHash/binary, NonceRand/binary, BlockDiff/binary,DiffsDelimiter/binary,WorkDiff/binary>>),
-    Port = open_port({spawn, "./amoveo_gpu_miner "++GPUID},[exit_status]),
-    receive 
-	{Port, {exit_status,1}}->
+    file:write_file("./mining_data/mining_input"++GPUID, <<BlockHash/binary, NonceRand/binary, BlockDiff/binary,DiffsDelimiter/binary,WorkDiff/binary>>).   
+
+check_new_mining_data(Port,BlockHash,WorkDiff,Pubkey,Peer) ->
+    io:fwrite(getTime()++" - Ask server for work. "),
+    {Data,Server} = connectionInfo(Pubkey,Peer),
+    R = talk_helper(Data,Server,10),
+    if
+	is_list(R) ->
+	    {New_BlockHash,New_BlockDiff,New_WorkDiff} = unpack_mining_data(R,Peer),
+	    if 
+		(New_BlockHash /= BlockHash) or (New_WorkDiff /= WorkDiff) ->
+		    write_mining_data(New_BlockHash,New_BlockDiff,New_WorkDiff);
+		true->
+		    ok
+	    end,
+	    wait_gpu(Port,New_BlockHash,New_WorkDiff,Pubkey,Peer);
+	is_atom(R) ->
+	    wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer)
+    end.
+
+wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer) ->
+    receive
+	{Port,{exit_status,1}}->
 	    Nonce = read_nonce(1),
 	    io:fwrite(getTime()++" - Found block "),
 	    io:fwrite(base64:encode(<<BlockHash/binary,Nonce:184>>)),
+	    WorkDiffInt = list_to_integer(binary_to_list(WorkDiff)),
 	    io:fwrite(" for difficulty "++integer_to_list(WorkDiffInt)++". "),
             BinNonce = base64:encode(<<Nonce:184>>),
 	    BinPubkey = list_to_binary(Pubkey),
@@ -99,7 +117,16 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer) ->
             timer:sleep(100);
 	{Port, {exit_status,0}}->
             ok		
-    end,
+    after
+	?timeout ->
+	    check_new_mining_data(Port,BlockHash,WorkDiff,Pubkey,Peer)
+    end.	    
+
+start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer) ->
+    write_mining_data(BlockHash,BlockDiff,WorkDiff),
+    GPUID = os:getenv("CUDA_VISIBLE_DEVICES"),
+    Port = open_port({spawn, "./amoveo_gpu_miner "++GPUID},[exit_status]),
+    wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer),
     miner(Pubkey,Peer).
 
 talk_helper2(Data, Peer) ->

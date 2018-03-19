@@ -372,7 +372,8 @@ int main(int argc, char *argv[])
 	return(0);
 
     BYTE bhash[32];
-    BYTE nonce[23];
+    BYTE nonce_in[23];
+    BYTE nonce_out[23];
     WORD id;
     if (argc > 1) {
 	if(strcmp(argv[1],"perftest")==0)
@@ -405,17 +406,16 @@ int main(int argc, char *argv[])
     sprintf(debugfilename,"debug%d.txt",id);
     FILE *fdebug = fopen(debugfilename,"w");
     unsigned int blockdiff;
-    unsigned int workdiff;
-    read_input(bhash, nonce, id, &blockdiff, &workdiff);
-
+    unsigned int workdiff, workdiff_new;
+    read_input(bhash, nonce_in, id, &blockdiff, &workdiff);
     fprintf(fdebug,"Height : %d, Block Difficulty : %d, Work Difficulty : %d\n",init_height, blockdiff, workdiff);
     fflush(fdebug);
     
-    BYTE bdata[55];//32+23 
+    BYTE bdata[55];//32+23
     for (int i = 0; i < 32; i++) 
 	bdata[i] = bhash[i];
     for (int i = 0; i < 23; i++)
-	bdata[i+32] = nonce[i];
+	bdata[i+32] = nonce_in[i];
     
     unsigned int bdim = BlockDim;
     unsigned int gdim = GridDim;
@@ -446,36 +446,48 @@ int main(int argc, char *argv[])
     
     t_start = clock();
     t_round = clock();
+    unsigned int noncepow;
     do{
 	m++;
-	success = amoveo_mine_gpu(nonce,workdiff,bdata,gdim,bdim,m,nonceRounds,&numHashes);
-      
+	success = amoveo_mine_gpu(nonce_out,workdiff,bdata,gdim,bdim,m,nonceRounds,&numHashes);
+	    
 	t_end = clock();
 	round_elapsed = ((double)(t_end-t_round))/CLOCKS_PER_SEC;
 	total_elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	fprintf(fdebug,"Round %d/%d Hash Rate : %0.2f MH/s took %0.1f s, %0.1f s total.\n",m,maxRounds,numHashes/(1000000.0*round_elapsed),round_elapsed,total_elapsed);
+	fprintf(fdebug,"Round %d/%d Hash Rate : %0.2f MH/s took %0.1f s, %0.1f s total. Work Difficulty : %d.\n",m,maxRounds,numHashes/(1000000.0*round_elapsed),round_elapsed,total_elapsed,workdiff);
 	fflush(fdebug);
 	
+	read_input(bhash, nonce_in, id, &blockdiff, &workdiff);
+	for (int i = 0; i < 32; i++)
+	    bdata[i] = bhash[i];
+	for (int i = 0; i < 23; i++)
+	    bdata[i+32] = nonce_in[i];
+	
+	if(success)
+	{
+	    noncepow = get_pow(nonce_out,blockdiff,bhash);
+	    success = noncepow > workdiff;
+	    if(!success)
+		fprintf(fdebug,"Block Hash or Work Difficulty changed! Nonce no longer valid.\n");
+	}
+	
 	t_round = clock();
-
-	if(get_height() != init_height)
-	    break;
     }while(!success && m < maxRounds);
     
     if(success){
-	fprintf(fdebug,"Nonce found after %f seconds - Difficulty %d\n",total_elapsed,get_pow(nonce,blockdiff,bhash));
+	fprintf(fdebug,"Nonce found after %f seconds - Difficulty %d\n",total_elapsed,noncepow);
 	fprintf(fdebug,"Block : ");
 	for(int i = 0; i < 32; i++)
 	    fprintf(fdebug,"%02X",bdata[i]);
 	fprintf(fdebug,"\n");
 	fprintf(fdebug,"Nonce : ");
 	for(int i = 0; i < 23; i++)
-	    fprintf(fdebug,"%02X",nonce[i]);
+	    fprintf(fdebug,"%02X",nonce_out[i]);
 	fprintf(fdebug,"\n");
 	
-	write_nonce(nonce,id);
+	write_nonce(nonce_out,id);
     }else{
-	fprintf(fdebug,"Somebody else found nonce within %f seconds\n",total_elapsed);
+	fprintf(fdebug,"Failed to find nonce within max rounds. Trying again with different random nonce.\n",total_elapsed);
     }
     fprintf(fdebug,"\n");
     fflush(fdebug);
