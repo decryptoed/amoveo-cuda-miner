@@ -172,13 +172,13 @@ void read_input(BYTE B[32], BYTE N[23], WORD id, unsigned int* blockdiff, unsign
     *workdiff = wdiff;
 }
 
-void estimate_hashrate(unsigned int difficulty, unsigned int check_every)
+void estimate_hashrate()
 {
     srand(time(NULL));
-    
-    double difficulty_zeros = (double)(difficulty/256); //Minimum Number of zeros to find a solution
-    //probability that you get at least that many zeros for a single hash = (0.5)^difficulty_zeros
-    double probability_zeros = pow(0.5,difficulty_zeros);
+
+    unsigned int difficulty = 2560;
+    unsigned int calibration_batch_size = 10;
+    unsigned int num_successes;
 
     BYTE data[55];
     BYTE nonce[32];
@@ -186,8 +186,26 @@ void estimate_hashrate(unsigned int difficulty, unsigned int check_every)
     unsigned int m = 0;
     double numHashes;
 
-    unsigned int num_successes = 0;
-
+    //Calibrate difficulty for proper measurement
+    do{
+	difficulty += 256;
+	num_successes = 0;
+	
+	for(int i = 0; i < calibration_batch_size; i++)
+	{
+	    generate_random_block(data,nonce);
+	    if(amoveo_mine_gpu(nonce,difficulty,data,GridDim,BlockDim,i,NonceRounds,&numHashes))
+		num_successes++;
+	}
+	printf("\rCalibration - %2d / %2d at difficulty %6d",num_successes,calibration_batch_size,difficulty);
+	fflush(stdout);
+    }while(num_successes*100 > calibration_batch_size*70);
+    printf("\n");
+    
+    double difficulty_zeros = (double)(difficulty/256); //Minimum Number of zeros to find a solution
+    double probability_zeros = pow(0.5,difficulty_zeros);
+    
+    num_successes = 0;
     double reported_Hashrate;
     
     double elapsed;
@@ -200,9 +218,10 @@ void estimate_hashrate(unsigned int difficulty, unsigned int check_every)
 	    num_successes++;
 	
 	m++;
-	if(m % check_every == 0){
+	if(m % calibration_batch_size == 0){
 	    elapsed = ((double)(clock()-t_start))/CLOCKS_PER_SEC;
-	    printf("Elapsed : %0.1f s, Trials : %d, Successes : %d, Estimated Hashrate : %0.1f MH/s\n",elapsed,m,num_successes,num_successes*1.0/(1000000.0*elapsed*probability_zeros));
+	    printf("\rElapsed : %0.1f s, Trials : %d, Successes : %d, Measured Hashrate : %0.1f MH/s",elapsed,m,num_successes,num_successes*1.0/(1000000.0*elapsed*probability_zeros));
+	    fflush(stdout);
 	}
     }
 }
@@ -357,12 +376,12 @@ void perf_CUDA(){
 			
 	cuda_elapsed = ((double)(t_end-t_cudastart))/CLOCKS_PER_SEC;
 	elapsed = ((double)(t_end-t_start))/CLOCKS_PER_SEC;
-	printf("CUDA kernel took %f s, Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashes/(1000000.0*cuda_elapsed),elapsed);
+	printf("CUDA kernel took %f s, Estimated Hashrate : %0.2f MH/s, %f total elapsed \n",cuda_elapsed,numHashes/(1000000.0*cuda_elapsed),elapsed);
     }while(!success && m < trials);
 
     double averageRate = m*numHashes/(1000000.0*elapsed);
     
-    printf("Hash rate test finished - Average %0.2f MH/s\n",averageRate);
+    printf("Hash rate test finished - Estimated Average %0.2f MH/s\n",averageRate);
 }
 
 int main(int argc, char *argv[])
@@ -392,9 +411,7 @@ int main(int argc, char *argv[])
 	    return(0);
 	}else if (strcmp(argv[1],"estimate")==0)
 	{
-	    unsigned int diff = atoi(argv[2]);
-	    unsigned int checkevery = atoi(argv[3]);
-	    estimate_hashrate(diff,checkevery);
+	    estimate_hashrate();
 	    return(0);
 	}
 	id = atoi(argv[1]);

@@ -25,10 +25,9 @@ Steps to mine:
 2. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
 3. sh clean.sh when finished mining
 
-Steps to perform perf test
-1. sh perftest.sh
+`sh perftest.sh` to perform perf test (Check correctness and estimate hashrate).
 
-By default, the miner will mine to [Mandel Hoff's mining pool](http://amoveopool.com/) that takes a 3% fee with shared payouts.
+By default, the miner will mine to [AmoveoPool](http://amoveopool2.com/) that takes a 3% fee with shared payouts.
 
 The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade is available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-8x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram.
 
