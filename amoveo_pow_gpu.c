@@ -172,36 +172,37 @@ void read_input(BYTE B[32], BYTE N[23], WORD id, unsigned int* blockdiff, unsign
     *workdiff = wdiff;
 }
 
-void estimate_hashrate()
+void estimate_hashrate(unsigned int difficulty)
 {
     srand(time(NULL));
 
-    unsigned int difficulty = 2560;
-    unsigned int calibration_batch_size = 10;
     unsigned int num_successes;
-
+    double numHashes;
+    
     BYTE data[55];
     BYTE nonce[32];
-
-    unsigned int m = 0;
-    double numHashes;
-
-    //Calibrate difficulty for proper measurement
-    do{
-	difficulty += 256;
-	num_successes = 0;
 	
-	for(int i = 0; i < calibration_batch_size; i++)
-	{
-	    generate_random_block(data,nonce);
-	    if(amoveo_mine_gpu(nonce,difficulty,data,GridDim,BlockDim,i,NonceRounds,&numHashes))
-		num_successes++;
-	}
-	printf("\rCalibration - %2d / %2d at difficulty %6d",num_successes,calibration_batch_size,difficulty);
-	fflush(stdout);
-    }while(num_successes*100 > calibration_batch_size*70);
-    printf("\n");
-    
+    if(difficulty == 0)
+    {
+	unsigned int difficulty_cal = 2560;
+	unsigned int calibration_batch_size = 10;
+	//Calibrate difficulty for proper measurement
+	do{
+	    difficulty_cal += 256;
+	    num_successes = 0;
+	
+	    for(int i = 0; i < calibration_batch_size; i++)
+	    {
+		generate_random_block(data,nonce);
+		if(amoveo_mine_gpu(nonce,difficulty_cal,data,GridDim,BlockDim,i,NonceRounds,&numHashes))
+		    num_successes++;
+	    }
+	    printf("\rCalibrating difficulty... %d",difficulty_cal);
+	    fflush(stdout);
+	}while(num_successes*100 > calibration_batch_size*70);
+	difficulty = difficulty_cal;
+    }
+    printf("\nDifficulty set at %d, starting hashrate measurement.\n",difficulty);
     double difficulty_zeros = (double)(difficulty/256); //Minimum Number of zeros to find a solution
     double probability_zeros = pow(0.5,difficulty_zeros);
     
@@ -210,7 +211,7 @@ void estimate_hashrate()
     
     double elapsed;
     clock_t t_start = clock();
-    
+    unsigned int m = 0;
     while(true){
 	generate_random_block(data,nonce);
 
@@ -218,11 +219,10 @@ void estimate_hashrate()
 	    num_successes++;
 	
 	m++;
-	if(m % calibration_batch_size == 0){
-	    elapsed = ((double)(clock()-t_start))/CLOCKS_PER_SEC;
-	    printf("\rElapsed : %0.1f s, Trials : %d, Successes : %d, Measured Hashrate : %0.1f MH/s",elapsed,m,num_successes,num_successes*1.0/(1000000.0*elapsed*probability_zeros));
-	    fflush(stdout);
-	}
+	
+	elapsed = ((double)(clock()-t_start))/CLOCKS_PER_SEC;
+	printf("\rElapsed : %0.1f s, Trials : %d, Successes : %d, Measured Hashrate : %0.1f MH/s",elapsed,m,num_successes,num_successes*1.0/(1000000.0*elapsed*probability_zeros));
+	fflush(stdout);
     }
 }
 
@@ -411,7 +411,10 @@ int main(int argc, char *argv[])
 	    return(0);
 	}else if (strcmp(argv[1],"estimate")==0)
 	{
-	    estimate_hashrate();
+	    unsigned int diff = 0;
+	    if(argc > 2)
+		diff = atoi(argv[2]);
+	    estimate_hashrate(diff);
 	    return(0);
 	}
 	id = atoi(argv[1]);
