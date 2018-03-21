@@ -1,0 +1,5 @@
+*Estimated* hashrate as reported from `tune.sh` and `perftest.sh` *estimates* your GPU hashrate from only the time it takes your GPU to run the kernel. Based on the parameters set in gpuparams.h, the number of calculated hashes of the kernel is **_assumed_**, and the *estimated* hashrate is simply the assumed number of hashes of the kernel divided by the time taken to run the kernel.
+
+However, what you really care about is finding blocks! `measure_hashrate.sh` first calibrates to find a difficulty where blocks are slightly hard (but not too hard) to find, and then runs the miner on simulated blocks. The hashrate is then *measured* by taking into account the percentage of blocks found over the mining period so far. This is a more accurate measure of hashrate as it is derived from actual percentage of blocks found over a given period of time (at a constant difficulty).
+
+Note : The longer you run `measure_hashrate.sh` for, the more accurate the reported hashrate is. If you want to skip calibration and set the difficulty directly, you can do `sh measure_hashrate.sh [difficulty]`, for example `sh measure_hashrate.sh 9000`.
