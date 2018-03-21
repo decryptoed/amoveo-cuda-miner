@@ -235,8 +235,6 @@ int correctness_CUDA(){
     BYTE data[55];
 
     unsigned int d = 4000; //some low difficulty
-    unsigned int gdim = 1<<8;
-    unsigned int bdim = 1<<10;
     double numHashes;
     
     double elapsed = 0;
@@ -250,7 +248,7 @@ int correctness_CUDA(){
     do{
 	generate_random_block(data,nonce);
 	//Kernel should be able to find solution within 1 round
-	success = amoveo_mine_gpu(nonce,d,data,gdim,bdim,0,1,&numHashes);
+	success = amoveo_mine_gpu(nonce,d,data,GridDim,BlockDim,0,NonceRounds,&numHashes);
 
 	if(success){
 	    m++;
