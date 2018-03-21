@@ -7,7 +7,7 @@
 %This should probably be around 1/20th of the blocktime.
 
 unpack_mining_data(R,Peer) ->
-    case string:equal(Peer,"http://amoveopool2.com/work/") of
+    case string:equal(Peer,"http://amoveopool2.com/work") of
 	true->
 	    <<_:(8*11), R2/binary>> = list_to_binary(R),
 	    {First,R3} = slice(R2,hd("\"")),
@@ -29,7 +29,7 @@ unpack_mining_data(R,Peer) ->
 
 connectionInfo(Pubkey,Peer) ->
     flush(),
-    case string:equal(Peer,"http://amoveopool2.com/work/") of
+    case string:equal(Peer,"http://amoveopool2.com/work") of
 	true ->
 	    Data = "[\"mining_data\",\""++Pubkey++"\"]",
 	    Server = "http://AmoveoPool2.com/work"; 
