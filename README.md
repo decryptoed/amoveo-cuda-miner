@@ -25,7 +25,9 @@ Steps to mine:
 2. To see debug info, open debug.txt ("tail -f debug0.txt" in a separate terminal to stream debug info)
 3. sh clean.sh when finished mining
 
-`sh perftest.sh` to perform perf test (Check correctness and estimate hashrate).
+Steps to test/debug:
+- `sh perftest.sh` to perform check correctness and estimate hashrate.
+- `sh measure_hashrate.sh` to measure actual hashrate of your GPU. ([What is the difference between estimated and measured hashrate?](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/hashrate.md))
 
 By default, the miner will mine to [AmoveoPool](http://amoveopool2.com/) that takes a 3% fee with shared payouts.
 
