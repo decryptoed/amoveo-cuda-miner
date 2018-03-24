@@ -103,34 +103,7 @@ void write_nonce(BYTE x[23], int id) {
     fclose(f);
     return;
 }
-int get_height(){
-    char buf[256];
-    FILE* fp;
-    fp = popen("curl -s -i -d \'[\"height\"]\' http://159.65.120.84:8080","r");
-    if(fp == NULL)
-    {
-	printf("Couldn't get height from node\n");
-	return 0;
-    }
-    
-    while(fgets(buf,sizeof(buf),fp) != NULL)
-	continue;
 
-    int start;
-    int end;
-    for(int i = 0; i < sizeof(buf) ; i++)
-    {
-	if(buf[i] == ',')
-	    start = i;
-	if(buf[i] == ']')
-	{
-	    end = i;
-	    break;
-	}
-    }
-    buf[end]=0;
-    return atoi(buf+start+1);
-}
 void read_input(BYTE B[32], BYTE N[23], WORD id, unsigned int* blockdiff, unsigned int* workdiff) {
     FILE *fileptr;
     char inputfilename[32];
@@ -384,10 +357,6 @@ void perf_CUDA(){
 
 int main(int argc, char *argv[])
 {
-    int init_height = get_height();
-    if(init_height == 0)
-	return(0);
-
     BYTE bhash[32];
     BYTE nonce_in[23];
     BYTE nonce_out[23];
@@ -426,7 +395,7 @@ int main(int argc, char *argv[])
     unsigned int blockdiff;
     unsigned int workdiff, workdiff_new;
     read_input(bhash, nonce_in, id, &blockdiff, &workdiff);
-    fprintf(fdebug,"Height : %d, Block Difficulty : %d, Work Difficulty : %d\n",init_height, blockdiff, workdiff);
+    fprintf(fdebug,"Block Difficulty : %d, Work Difficulty : %d\n", blockdiff, workdiff);
     fflush(fdebug);
     
     BYTE bdata[55];//32+23
