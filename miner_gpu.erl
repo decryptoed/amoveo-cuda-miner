@@ -45,6 +45,8 @@ start() ->
     io:fwrite("see debug"++os:getenv("CUDA_VISIBLE_DEVICES")++".txt for more info.\n"),
     io:fwrite("Your Pubkey is "++Pubkey++"\n"),
     io:fwrite("You are connecting to "++Peer++"\n"),
+    io:fwrite("You will ask the server for new work every "++integer_to_list(round(?mining_refresh/1000))++" seconds.\n"),
+    io:fwrite("You will restart the GPU miner every "++integer_to_list(round(?mining_refresh*?restart_after/1000))++ " seconds.\n"),
     miner(Pubkey,Peer).
 
 getTime()->
