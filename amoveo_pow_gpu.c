@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
 	
 	write_nonce(nonce_out,id);
     }else{
-	fprintf(fdebug,"Failed to find nonce within max rounds. Trying again with different random nonce.\n",total_elapsed);
+	fprintf(fdebug,"Failed to find nonce within max rounds. Trying again.\n",total_elapsed);
     }
     fprintf(fdebug,"\n");
     fflush(fdebug);

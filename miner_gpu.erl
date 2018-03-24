@@ -1,10 +1,9 @@
 -module(miner_gpu).
 
 -export([start/0, unpack_mining_data/2]).
--define(mining_refresh, 5000).%how long to wait in milliseconds before checking if new mining data is available.
--define(restart_after, 600000).%How long to wait in milliseconds before restarting miner while waiting for response from GPU
+-define(mining_refresh, 10000).%how long to wait in milliseconds before checking if new mining data is available.
+-define(restart_after, 90). %How many mining_refresh periods to wait before restarting miner while waiting for response from GPU
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
-%This should probably be around 1/20th of the blocktime.
 
 unpack_mining_data(R,Peer) ->
     case string:equal(Peer,"http://amoveopool2.com/work") of
@@ -123,8 +122,8 @@ wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer,N) ->
 	    if N > 0 ->
 		    check_new_mining_data(Port,BlockHash,WorkDiff,Pubkey,Peer,N-1);
 	       true  ->
-		    port_close(Port),
-		    ok
+		    {os_pid,Pid} = erlang:port_info(Port,os_pid),
+		    os:cmd(io_lib:format("kill ~p",[Pid]))
 	    end
     end.
 
@@ -132,7 +131,7 @@ start_gpu_miner(BlockHash,BlockDiff,WorkDiff,Pubkey,Peer) ->
     write_mining_data(BlockHash,BlockDiff,WorkDiff),
     GPUID = os:getenv("CUDA_VISIBLE_DEVICES"),
     Port = open_port({spawn, "./amoveo_gpu_miner "++GPUID},[exit_status]),
-    wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer,round(?restart_after/?mining_refresh)),
+    wait_gpu(Port,BlockHash,WorkDiff,Pubkey,Peer,?restart_after),
     miner(Pubkey,Peer).
 
 talk_helper2(Data, Peer) ->
