@@ -157,7 +157,12 @@ talk_helper(Data, Peer, N) ->
 		false ->
 		    io:fwrite("Server gave incorrect response\n"),
 		    timer:sleep(?pool_sleep_period),
-	 	    talk_helper(Data,Peer,N-1)
+		    case string:equal(R,"Not valid share. Difficulty too low.") of
+			true ->
+			    talk_helper(Data,Peer,0);
+			false->
+			    talk_helper(Data,Peer,N-1)
+		    end
 	    end;
         %{error, _} ->
         E -> 
