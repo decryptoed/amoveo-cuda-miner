@@ -2,7 +2,7 @@
 
 -export([start/0, unpack_mining_data/2]).
 -define(mining_refresh, 5000).%how long to wait in milliseconds before checking if new mining data is available.
--define(restart_after, 90). %How many mining_refresh periods to wait before restarting miner while waiting for response from GPU
+-define(restart_after, 360). %How many mining_refresh periods to wait before restarting miner while waiting for response from GPU
 -define(pool_sleep_period, 10000).%How long to wait in miliseconds if we cannot connect to the mining pool.
 
 unpack_mining_data(R,Peer) ->
