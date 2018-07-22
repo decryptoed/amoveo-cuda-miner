@@ -1,4 +1,6 @@
-# **NO LONGER MAINTAINED**
+# **STILL WORKS AS OF July 2018, BUT NO LONGER MAINTAINED**
+
+For questions, please contact decryptoed (gmail address) or @Iridescence on telegram.
 
 Measured GPU Speeds:
 - V100 - 7094 MH/s upgraded
