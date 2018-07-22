@@ -1,3 +1,5 @@
+# **NO LONGER MAINTAINED**
+
 Measured GPU Speeds:
 - V100 - 728 MH/s default, 7094 MH/s upgraded
 - P100 - ? MH/s default, ? MH/s upgraded
@@ -31,9 +33,7 @@ Steps to test/debug:
 
 By default, the miner will mine to [AmoveoPool](http://amoveopool2.com/) that takes a 2% fee with shared payouts.
 
-The CUDA code here is a basic and unoptimized version for Amoveo GPU mining. An upgrade is available to provide the most optimized CUDA code for Amoveo GPU mining, and typically gives a 3-8x performance improvement, depending on your GPU. For upgrade inquiries, please contact decryptoed@gmail.com or @Iridescence in the Amoveo telegram.
-
-Donations to encourage improvements and optimizations:
+Donations welcomed:
 
 Amoveo - BIGGeST9w6M//7Bo8iLnqFSrLLnkDXHj9WFFc+kwxeWm2FBBi0NDS0ERROgBiNQqv47wkh0iABPN1/2ECooCTOM=
 
