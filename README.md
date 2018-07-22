@@ -1,12 +1,9 @@
 # **NO LONGER MAINTAINED**
 
 Measured GPU Speeds:
-- V100 - 728 MH/s default, 7094 MH/s upgraded
-- P100 - ? MH/s default, ? MH/s upgraded
-- GTX1080 - 300 MH/s default, 2984 MH/s upgraded 
-- GTX1080Ti - 480 MH/s default, ~4000 MH/s upgraded
-- GTX1050 - ? MH/s default, ? MH/s upgraded
-- K80 - ? MH/s default, ? MH/s upgraded
+- V100 - 7094 MH/s upgraded
+- GTX1080 - 2984 MH/s upgraded 
+- GTX1080Ti - ~4000 MH/s upgraded
 
 Dependencies :
 - Ubuntu 16.04
@@ -16,7 +13,6 @@ sudo apt-get install gpg erlang libncurses5-dev libssl-dev unixodbc-dev g++ git
 sudo apt-get install build-essential
 sudo apt-get install curl
 ```
-
 Setup [Only needed for the first time]:
 1. Set DEFAULT_PUBKEY in start_miner.sh
 2. Set DEFAULT_POOL in start_miner.sh as the desired [mining pool address](https://github.com/decryptoed/amoveo-cuda-miner/blob/master/docs/pools.md) if necessary.
